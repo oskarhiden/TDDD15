@@ -1,0 +1,44 @@
+---
+title: "TDDE15 - Lab 1"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Question 1
+```{r}
+library(bnlearn)
+data("asia")
+structure = hc(asia, restart = 3) #start = initial structure, restart = random restarts, score = score, equvivilent sample size.
+
+b=T
+for (i in 1:10) {
+  structure2 = hc(asia, restart = 1)
+  b = all.equal(structure, structure2)
+  if (b!=TRUE) {
+    break
+  } 
+}
+plot(structure)
+plot(structure2)
+
+```
+The hc return two different networks due to......
+
+## Question 2
+```{r}
+N = dim(asia)[1]
+N
+train = asia[1:floor(N*0.8),]
+test = asia[(floor(N*0.8)+1):N,]
+
+structure = hc(train, restart = 0)
+plot(structure)
+
+
+```
