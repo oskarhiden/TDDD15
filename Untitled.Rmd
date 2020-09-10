@@ -85,26 +85,5 @@ if (prob_s$S[1]>prob_s$S[2]) {
 
 table(pred_s,test_ans)
 
-#TEST ---------
-pdag = iamb(train)
-pdag
-plot(pdag)
-#true network
-dag = model2network("[A][S][T|A][L|S][B|S][D|B:E][E|T:L][X|E]")
-plot(dag)
-
-cor_fit=bn.fit(dag, data=asia)
-coefficients(cor_fit)
-
-cor_grain=as.grain(cor_fit)
-setFinding(cor_grain)
-querygrain(cor_grain, nodes = node)
-
-pred = predict(cor_fit, node, test)
-conf_mat = table(test[,2], pred)
-
-
-cor_fit$S
-# END TEST---------
 
 ```
