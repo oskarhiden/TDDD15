@@ -40,5 +40,52 @@ test = asia[(floor(N*0.8)+1):N,]
 structure = hc(train, restart = 0)
 plot(structure)
 
+#Learn conditional probabiliies given the nodes parents
+fit = bn.fit(structure, data=train)
+fit
+coefficients(fit)
+
+# Create Graphical independance network ( grain object )
+fit_grain = as.grain(fit)
+fit_grain
+
+# create a junction tree and est. potential clique ( grain object )
+junc_tree = compile(fit_grain)
+junc_tree
+
+#remove S from test-data
+test_ans = test[,"S"]
+test_evid = subset(test, select = -2)
+
+# finding/evidance or potentials
+nodes_ev = names(test_evid)
+evid = setEvidence(junc_tree, nodes_ev, states = test_evid[1,])
+
+# quergrain to get conditional distributon
+node = "S"
+querygrain(junc_tree, nodes = node, evidence = evid)
+
+
+#TEST ---------
+pdag = iamb(train)
+pdag
+plot(pdag)
+#true network
+dag = model2network("[A][S][T|A][L|S][B|S][D|B:E][E|T:L][X|E]")
+plot(dag)
+
+cor_fit=bn.fit(dag, data=asia)
+coefficients(cor_fit)
+
+cor_grain=as.grain(cor_fit)
+setFinding(cor_grain)
+querygrain(cor_grain, nodes = node)
+
+pred = predict(cor_fit, node, test)
+conf_mat = table(test[,2], pred)
+
+
+cor_fit$S
+# END TEST---------
 
 ```
