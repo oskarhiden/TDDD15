@@ -28,7 +28,7 @@ plot(structure)
 plot(structure2)
 
 ```
-The hc return two different networks due to......
+The HC return two different networks, because it can get trapped in a local optimum. HC gives you all independencies that exist in the true model. it does not give you any fals indenpendancies. In this case an edge is reversed, which would give the same score in the HC algorithm.
 
 ## Question 2
 ```{r}
@@ -57,14 +57,33 @@ junc_tree
 test_ans = test[,"S"]
 test_evid = subset(test, select = -2)
 
+#Predict S
+pred_s =c()
+for (j in 1:dim(test_evid[1])) {
+  
 # finding/evidance or potentials
+#need to extract observed values correctly.....
+obs = c()
+for (i in 1:7) {
+  obs = c(obs, as.character(test_evid[j,i]))
+}
+
 nodes_ev = names(test_evid)
-evid = setEvidence(junc_tree, nodes_ev, states = test_evid[1,])
+evid = setEvidence(fit_grain, nodes_ev, states = obs)
+pEvidence(evid)
 
 # quergrain to get conditional distributon
-node = "S"
-querygrain(junc_tree, nodes = node, evidence = evid)
+node = c("S")
+prob_s = querygrain(evid, nodes = node)
 
+if (prob_s$S[1]>prob_s$S[2]) {
+  pred_s=c(pred_s,"no")
+}else{
+  pred_s=c(pred_s,"yes")
+}
+}
+
+table(pred_s,test_ans)
 
 #TEST ---------
 pdag = iamb(train)
