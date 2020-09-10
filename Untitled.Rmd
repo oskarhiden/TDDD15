@@ -54,7 +54,7 @@ fit_grain = as.grain(fit)
 
 # create a junction tree and est. potential clique ( grain object )
 #junc_tree = compile(fit_grain)
-print(junc_tree$cptlist)
+#print(junc_tree$cptlist)
 
 #remove S from test-data
 test_ans = test[,"S"]
@@ -122,5 +122,48 @@ for (j in 1:dim(test_evid[1])) {
 }
 
 table(pred_s,test_ans)
+
+```
+
+
+## Question 4
+```{r}
+#Crating an empty network
+library(bnlearn)
+b_net = empty.graph(names(asia))
+b_net
+class(b_net)
+
+#Createing directed edges
+arc_set = matrix(names(asia),
+                 ncol = 2, byrow = TRUE,
+                 dimnames = list(NULL, c("from", "to")))
+arcs(b_net) = arc_set
+plot(b_net)
+
+#Creating an undirected edge
+a=names(asia)
+a[3] = "S"
+a[4] = "A"
+arc_set = matrix(a,
+                 ncol = 2, byrow = TRUE,
+                 dimnames = list(NULL, c("from", "to")))
+arc_set
+
+arcs(b_net) = arc_set
+plot(b_net)
+
+# Adjacncy matrix (0L ensures that the number is stored as an integer instead of a double)
+adj = matrix(1L, ncol = 8, nrow = 8,
+             dimnames = list(names(asia), names(asia)))
+adj = adj - diag(8)
+amat(b_net) = adj
+plot(b_net)
+
+# Remove some edge:
+adj["A", "D"] = 0L
+adj["D", "A"] = 0L
+amat(b_net) = adj
+plot(b_net)
 
 ```
