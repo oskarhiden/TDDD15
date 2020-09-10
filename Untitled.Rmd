@@ -17,10 +17,11 @@ data("asia")
 structure = hc(asia, restart = 3) #start = initial structure, restart = random restarts, score = score, equvivilent sample size.
 
 b=T
-for (i in 1:10) {
+for (i in 1:100) {
   structure2 = hc(asia, restart = 1)
   b = all.equal(structure, structure2)
   if (b!=TRUE) {
+    print("Different network found")
     break
   } 
 }
@@ -32,8 +33,10 @@ The HC return two different networks, because it can get trapped in a local opti
 
 ## Question 2
 ```{r}
+library(gRain)
 N = dim(asia)[1]
-N
+
+#
 train = asia[1:floor(N*0.8),]
 test = asia[(floor(N*0.8)+1):N,]
 
@@ -42,16 +45,16 @@ plot(structure)
 
 #Learn conditional probabiliies given the nodes parents
 fit = bn.fit(structure, data=train)
-fit
-coefficients(fit)
+#fit
+#coefficients(fit)
 
 # Create Graphical independance network ( grain object )
 fit_grain = as.grain(fit)
-fit_grain
+#fit_grain
 
 # create a junction tree and est. potential clique ( grain object )
-junc_tree = compile(fit_grain)
-junc_tree
+#junc_tree = compile(fit_grain)
+print(junc_tree$cptlist)
 
 #remove S from test-data
 test_ans = test[,"S"]
@@ -63,27 +66,61 @@ for (j in 1:dim(test_evid[1])) {
   
 # finding/evidance or potentials
 #need to extract observed values correctly.....
-obs = c()
-for (i in 1:7) {
-  obs = c(obs, as.character(test_evid[j,i]))
-}
-
-nodes_ev = names(test_evid)
-evid = setEvidence(fit_grain, nodes_ev, states = obs)
-pEvidence(evid)
-
-# quergrain to get conditional distributon
-node = c("S")
-prob_s = querygrain(evid, nodes = node)
-
-if (prob_s$S[1]>prob_s$S[2]) {
-  pred_s=c(pred_s,"no")
-}else{
-  pred_s=c(pred_s,"yes")
-}
+  obs = c()
+  for (i in 1:7) {
+    obs = c(obs, as.character(test_evid[j,i]))
+  }
+  
+  nodes_ev = names(test_evid)
+  evid = setEvidence(fit_grain, nodes_ev, states = obs)
+  #pEvidence(evid)
+  
+  # quergrain to get conditional distributon
+  node = c("S")
+  prob_s = querygrain(evid, nodes = node)
+  
+  if (prob_s$S[1]>prob_s$S[2]) {
+    pred_s=c(pred_s,"no")
+  }else{
+    pred_s=c(pred_s,"yes")
+  }
 }
 
 table(pred_s,test_ans)
 
+```
+
+## Question 3
+```{r}
+marc_blanc = mb(fit, node = c("S" ))
+marc_blanc
+test_evid = subset(test_evid, select=marc_blanc)
+
+pred_s =c()
+for (j in 1:dim(test_evid[1])) {
+  
+# finding/evidance or potentials
+#need to extract observed values correctly.....
+  obs = c()
+  for (i in 1:dim(test_evid)[2]) {
+    obs = c(obs, as.character(test_evid[j,i]))
+  }
+  
+  nodes_ev = names(test_evid)
+  evid = setEvidence(fit_grain, nodes_ev, states = obs)
+  #pEvidence(evid)
+  
+  # quergrain to get conditional distributon
+  node = c("S")
+  prob_s = querygrain(evid, nodes = node)
+  
+  if (prob_s$S[1]>prob_s$S[2]) {
+    pred_s=c(pred_s,"no")
+  }else{
+    pred_s=c(pred_s,"yes")
+  }
+}
+
+table(pred_s,test_ans)
 
 ```
