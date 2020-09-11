@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
 ## Question 1
-```{r}
+```{r, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center'}
 library(bnlearn)
 data("asia")
 structure = hc(asia, restart = 3) #start = initial structure, restart = random restarts, score = score, equvivilent sample size.
@@ -53,7 +53,7 @@ fit_grain = as.grain(fit)
 #fit_grain
 
 # create a junction tree and est. potential clique ( grain object )
-#junc_tree = compile(fit_grain)
+# junc_tree = compile(fit_grain)
 #print(junc_tree$cptlist)
 
 #remove S from test-data
@@ -86,9 +86,18 @@ for (j in 1:dim(test_evid[1])) {
   }
 }
 
-table(pred_s,test_ans)
+table = table(pred_s,test_ans)
+pred_s
+
+#Correct DAG
+dag = model2network("[A][S][T|A][L|S][B|S][D|B:E][E|T:L][X|E]")
+
 
 ```
+
+----Addera conf.table with correct DAG.-----
+We get the same classification from the correct network. Thats because S is independend given the marcov blanket ("B" & "L"). The subgraph containing S, B and L is learned correctly. 
+
 
 ## Question 3
 ```{r}
@@ -157,6 +166,7 @@ plot(b_net)
 adj = matrix(1L, ncol = 8, nrow = 8,
              dimnames = list(names(asia), names(asia)))
 adj = adj - diag(8)
+adj
 amat(b_net) = adj
 plot(b_net)
 
@@ -165,5 +175,7 @@ adj["A", "D"] = 0L
 adj["D", "A"] = 0L
 amat(b_net) = adj
 plot(b_net)
+
+
 
 ```
