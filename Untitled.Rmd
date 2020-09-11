@@ -36,7 +36,6 @@ The HC return two different networks, because it can get trapped in a local opti
 library(gRain)
 N = dim(asia)[1]
 
-#
 train = asia[1:floor(N*0.8),]
 test = asia[(floor(N*0.8)+1):N,]
 
@@ -45,12 +44,9 @@ plot(structure)
 
 #Learn conditional probabiliies given the nodes parents
 fit = bn.fit(structure, data=train)
-#fit
-#coefficients(fit)
 
 # Create Graphical independance network ( grain object )
 fit_grain = as.grain(fit)
-#fit_grain
 
 # create a junction tree and est. potential clique ( grain object )
 # junc_tree = compile(fit_grain)
@@ -132,8 +128,15 @@ for (j in 1:dim(test_evid[1])) {
 }
 
 corr_table = table(pred_s,test_ans)
-table
+
+miss_class = function(conf_matr){
+  return(1-sum(diag(conf_matr))/sum(conf_matr))
+}
+
+misc_table
+miss_class(misc_table)
 corr_table
+miss_class(corr_table)
 
 ```
 
@@ -172,8 +175,10 @@ for (j in 1:dim(test_evid[1])) {
 }
 
 marcov_table = table(pred_s,test_ans)
-table
+misc_table
+miss_class(misc_table)
 marcov_table
+miss_class(marcov_table)
 
 ```
 
@@ -190,27 +195,6 @@ test_evid = subset(test, select = -2)
 #Crating an empty network
 library(bnlearn)
 b_net = empty.graph(names(asia))
-b_net
-class(b_net)
-
-#Createing directed edges
-arc_set = matrix(names(asia),
-                 ncol = 2, byrow = TRUE,
-                 dimnames = list(NULL, c("from", "to")))
-arcs(b_net) = arc_set
-plot(b_net)
-
-#Creating an undirected edge
-a=names(asia)
-a[3] = "S"
-a[4] = "A"
-arc_set = matrix(a,
-                 ncol = 2, byrow = TRUE,
-                 dimnames = list(NULL, c("from", "to")))
-arc_set
-
-arcs(b_net) = arc_set
-plot(b_net)
 
 # Adjacncy matrix (0L ensures that the number is stored as an integer instead of a double)
 adj = matrix(0L, ncol = 8, nrow = 8,
@@ -249,12 +233,9 @@ for (j in 1:dim(test_evid[1])) {
   }
 }
 naive_table = table(pred_s,test_ans)
-table
+
+misc_table
+miss_class(misc_table)
 naive_table
-
-miss_class = function(conf_matr){
-  return(1-sum(diag(conf_matr))/sum(conf_matr))
-}
-
-
+miss_class(naive_table)
 ```
