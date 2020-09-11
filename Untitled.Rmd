@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```{r, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center'}
 library(bnlearn)
 data("asia")
-structure = hc(asia, restart = 3) #start = initial structure, restart = random restarts, score = score, equvivilent sample size.
+structure = hc(asia, restart = 3)
 
 b=T
 for (i in 1:100) {
@@ -27,12 +27,11 @@ for (i in 1:100) {
 }
 plot(structure)
 plot(structure2)
-
 ```
-The HC return two different networks, because it can get trapped in a local optimum. HC gives you all independencies that exist in the true model. it does not give you any fals indenpendancies. In this case an edge is reversed, which would give the same score in the HC algorithm.
+The HC return two different networks, because it can get trapped in a local optimum. In this case an edge is reversed, which would give the same score in the HC algorithm, therfore HC will evaluate these two networks as equlal and not move between them.
 
 ## Question 2
-```{r}
+```{r, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center'}
 library(gRain)
 N = dim(asia)[1]
 
@@ -40,9 +39,8 @@ train = asia[1:floor(N*0.8),]
 test = asia[(floor(N*0.8)+1):N,]
 
 structure = hc(train, restart = 0)
-plot(structure)
 
-#Learn conditional probabiliies given the nodes parents
+# Learn conditional probabiliies given the nodes parents
 fit = bn.fit(structure, data=train)
 
 # Create Graphical independance network ( grain object )
@@ -50,18 +48,18 @@ fit_grain = as.grain(fit)
 
 # create a junction tree and est. potential clique ( grain object )
 # junc_tree = compile(fit_grain)
-#print(junc_tree$cptlist)
+# print(junc_tree$cptlist)
 
-#remove S from test-data
+# Remove S from test-data
 test_ans = test[,"S"]
 test_evid = subset(test, select = -2)
 
-#Predict S
+# Predict S
 pred_s =c()
 for (j in 1:dim(test_evid[1])) {
   
-# finding/evidance or potentials
-#need to extract observed values correctly.....
+# Finding/evidance or potentials
+# Need to extract observed values correctly.
   obs = c()
   for (i in 1:7) {
     obs = c(obs, as.character(test_evid[j,i]))
@@ -70,7 +68,7 @@ for (j in 1:dim(test_evid[1])) {
   nodes_ev = names(test_evid)
   evid = setEvidence(fit_grain, nodes_ev, states = obs)
   
-  # quergrain to get conditional distributon
+  # Querygrain to get conditional distributon
   node = c("S")
   prob_s = querygrain(evid, nodes = node)
   
@@ -83,22 +81,19 @@ for (j in 1:dim(test_evid[1])) {
 
 misc_table = table(pred_s,test_ans)
 
-#Correct DAG
+# Correct DAG
 dag = model2network("[A][S][T|A][L|S][B|S][D|B:E][E|T:L][X|E]")
-#Learn conditional probabiliies given the nodes parents
+# Learn conditional probabiliies given the nodes parents
 fit = bn.fit(dag, data=train)
-#fit
-#coefficients(fit)
 
 # Create Graphical independance network ( grain object )
 fit_grain = as.grain(fit)
-#fit_grain
 
 # create a junction tree and est. potential clique ( grain object )
 # junc_tree = compile(fit_grain)
-#print(junc_tree$cptlist)
+# print(junc_tree$cptlist)
 
-#remove S from test-data
+# Remove S from test-data
 test_ans = test[,"S"]
 test_evid = subset(test, select = -2)
 
@@ -106,9 +101,9 @@ test_evid = subset(test, select = -2)
 pred_s =c()
 for (j in 1:dim(test_evid[1])) {
   
-# finding/evidance or potentials
-#need to extract observed values correctly.
-  obs = c()
+# Finding/evidance or potentials
+# Need to extract observed values correctly.
+ obs = c()
   for (i in 1:7) {
     obs = c(obs, as.character(test_evid[j,i]))
   }
@@ -116,7 +111,7 @@ for (j in 1:dim(test_evid[1])) {
   nodes_ev = names(test_evid)
   evid = setEvidence(fit_grain, nodes_ev, states = obs)
   
-  # quergrain to get conditional distributon
+  # Quergrain to get conditional distributon
   node = c("S")
   prob_s = querygrain(evid, nodes = node)
   
@@ -133,6 +128,11 @@ miss_class = function(conf_matr){
   return(1-sum(diag(conf_matr))/sum(conf_matr))
 }
 
+plot(structure)
+plot(dag)
+```
+
+```{r}
 misc_table
 miss_class(misc_table)
 corr_table
@@ -140,7 +140,7 @@ miss_class(corr_table)
 
 ```
 
-We get the same classification from the correct network. Thats because S is independend given the marcov blanket ("B" & "L"). The subgraph containing S, B and L is learned correctly. 
+We get the same classification from the correct network. Thats because "S" is independend given the marcov blanket ("B" & "L"). The subgraph containing "S", "B" and "L" is learned correctly. 
 
 
 ## Question 3
@@ -181,6 +181,8 @@ marcov_table
 miss_class(marcov_table)
 
 ```
+
+The classification turns out to be the same. Because "S" given the marcov blanket, is independent on the rest of the varibles given.
 
 
 ## Question 4
@@ -239,3 +241,5 @@ miss_class(misc_table)
 naive_table
 miss_class(naive_table)
 ```
+
+The classification of the naive bayes classifer is predicting worse, with a higher missclassification rate, than the BN generated form the HC-algorithm. That is becaues Naive Bayes assumes that all varibles is independend given "S" and that there is a possible dependence between "S" and all other varibles. And in the correct DAG we saw that S is only dependent on "B" and "L".
