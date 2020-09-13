@@ -1,5 +1,6 @@
 ---
 title: "TDDE15 - Lab 1"
+author: "Oskar Hidén - oskhi827"
 output:
   pdf_document: default
   html_document:
@@ -33,10 +34,12 @@ The HC return two different networks, because it can get trapped in a local opti
 ## Question 2
 ```{r, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center'}
 library(gRain)
-N = dim(asia)[1]
+n=dim(asia)[1] 
+set.seed(12345) 
+id=sample(1:n, floor(n*0.8)) 
 
-train = asia[1:floor(N*0.8),]
-test = asia[(floor(N*0.8)+1):N,]
+train=asia[id,]
+test=asia[-id,]
 
 structure = hc(train, restart = 0)
 
@@ -182,15 +185,16 @@ miss_class(marcov_table)
 
 ```
 
-The classification turns out to be the same. Because "S" given the marcov blanket, is independent on the rest of the varibles given.
+The classification turns out to be the same. Because "S" given the marcov blanket, is independent on the rest of the varibles.
 
 
 ## Question 4
 ```{r}
-
-N = dim(asia)[1]
-train = asia[1:floor(N*0.8),]
-test = asia[(floor(N*0.8)+1):N,]
+#n=dim(asia)[1] 
+#set.seed(12345) 
+#id=sample(1:n, floor(n*0.8)) 
+train=asia[id,]
+test=asia[-id,]
 test_ans = test[,"S"]
 test_evid = subset(test, select = -2)
 

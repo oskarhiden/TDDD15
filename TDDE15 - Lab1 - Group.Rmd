@@ -1,5 +1,12 @@
 ---
 title: "TDDE15 - Lab1 - Group"
+author:
+- Alice Velander(alive213) 
+- Oskar Hidén (oskhi827) 
+- David Björelind (davbj395) 
+- Samuel Persson (sampe028)
+
+date: "13/9/2020"
 output: pdf_document
 ---
 ```{r setup, include=FALSE}
@@ -123,8 +130,6 @@ predict_BN=function(network, nodes, pred_nodes, answer, observed){
   }
   
   #Get confusion matrix
-  length(answer)
-  length(classify)
   conf_matrix=table(answer, classify)
   
   return(confusionmatrix=conf_matrix)
@@ -145,7 +150,6 @@ dag_parameters = bn.fit(dag, data = train)
 graphical_Ind_dag = as.grain(dag_parameters)
 dag_tree = compile(graphical_Ind_dag)
 
-
 conf_matrix_true=predict_BN(dag_tree,nodes,pred_node, answer, observed) #We get the same results!
 
 #Confusionmatrix network for the true network:
@@ -155,7 +159,7 @@ missclass_rate(conf_matrix_true)
 
 
 ```
-We get the same results (confusionmatrix and masclassification rate). This is bc S is independenten given markov blanket. Comparing the networks, S has the same markov blanket for both networks. Since the markov blanket is "the seperators" from the rest of the network, it only dependes on those specific nodes. This gives us the same results, no matter what network we use. 
+We get the same results (confusionmatrix and masclassification rate). Given the markov blanket, "S" is independenten to the remaining nodes in the network. Comparing the networks, S has the same markov blanket for both networks. This gives us the same results, with the two different networks.
 
 ## Question 3
 In the previous exercise, you classified the variable S given observations for all the
@@ -195,10 +199,9 @@ for (i in 1:nrow(test)){
 }
 conf_matrix_3 = table(real_s, pred_3)
 print(conf_matrix_3)
-plot(conf_matrix_3, main = "Confusion matrix when only using Markov blanket")
-acc_3 = (conf_matrix_3[1]+conf_matrix_3[4])/sum(conf_matrix_3)
+missclass_rate(conf_matrix_3)
 ```
-Here, information from node B and L is used. The result is just like the previous ones, meaning that we have don't lose any information by only using the Markov blanket when doing inference from the graph.
+Here, observed information from node "B" and "L" is used. The result is just like the previous ones, meaning that we don't lose any information by only using the Markov blanket when doing inference from the graph. Again, given the markov blanket, "S" is independenten to the remaining nodes in the network.
 
 ## Question 4
 Repeat the exercise (2) using a naive Bayes classifier, i.e. the predictive variables are
@@ -211,14 +214,16 @@ miss_class = function(conf_matr){
   return(1-sum(diag(conf_matr))/sum(conf_matr))
 }
 
-N = dim(asia)[1]
-train = asia[1:floor(N*0.8),]
-test = asia[(floor(N*0.8)+1):N,]
+n=dim(asia)[1] 
+set.seed(12345) 
+id=sample(1:n, floor(n*0.8)) 
+
+train=asia[id,]
+test=asia[-id,]
 test_ans = test[,"S"]
 test_evid = subset(test, select = -2)
 
 #Crating an empty network
-library(bnlearn)
 b_net = empty.graph(names(asia))
 
 # Adjacncy matrix (0L ensures that the number is stored as an integer instead of a double)
@@ -263,9 +268,13 @@ conf_matrix
 miss_class(conf_matrix)
 naive_table
 miss_class(naive_table)
+
 ```
 
 The classification of the naive bayes classifer is predicting worse, with a higher missclassification rate, than the BN generated form the HC-algorithm. That is becaues Naive Bayes assumes that all varibles is independend given "S" and that there is a possible dependence between "S" and all other varibles. And in the correct DAG we saw that S is only dependent on "B" and "L".
 
 ## Task 5 - Explain why you obtain the same or different results in the exercises (2-4).
-In exercise 2-3 we obtain the same results, this is due to all networks having the same Markov blanket, which are the nodes S depend on. In Exercise 5 we have a different markov blanket, with a naive assumption of independence between nodes in the network (except for S), which gives us a higher misclassification rate (and less accurate predictions).  
+In exercise 2-3 we obtain the same results, this is due to all networks having the same Markov blanket, which are the nodes S depend on. In Exercise 5 we have a different markov blanket, with a naive assumption of independence between nodes in the network (except for S), which gives us a higher misclassification rate (and less accurate predictions). 
+
+## Contribution
+All members of the group contributed in the creation of this document. Samuel with code for Q1, Alice with Q2, David with Q3 and Oskar with Q4. Then all members discussed to create the written answers.
