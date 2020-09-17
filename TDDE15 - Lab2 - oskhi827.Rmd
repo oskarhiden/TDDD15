@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 #, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center'
 library(HMM)
 
-states = c("Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7", "Z8", "Z9", "Z10")
+states = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
 symbols = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
 #start_prob = rep(0, 10)
 #start_prob[1] = 1
@@ -39,5 +39,40 @@ for (i in 1:10) {
 }
 HMM = initHMM(states, symbols, start_prob, trans_prob, emmis_prob)
 print(HMM)
+
+```
+
+
+## Question 2
+```{r}
+N = 100
+sim = simHMM(HMM, N)
+sim
+```
+
+## Question 3
+```{r}
+observed = sim$observation
+
+miss_class = function(table){
+  return(1-(sum(diag(table))/sum(table)))
+}
+
+# filterd alpha --Alpha uses all observations up to point t to estimate Zt
+alpha_log = forward(HMM, observed)
+alpha = exp(alpha_log)
+most_prob_a = apply(alpha, MARGIN = 2, which.max)
+plot(most_prob_a, col="blue")
+lines(sim$states)
+sum(sim$states==most_prob_a)/100
+
+# smoothed alpha*beta  -- Alpha beta uses all observations (to T) to estimate Zt. "which is better"
+alpha_beta_log = backward(HMM, observed)
+alpha_beta = exp(alpha_beta_log)
+most_prob_ab = apply(alpha_beta, MARGIN = 2, which.max)
+plot(most_prob_ab, col="blue")
+lines(sim$states)
+
+sum(sim$states==most_prob_ab)/100
 
 ```
