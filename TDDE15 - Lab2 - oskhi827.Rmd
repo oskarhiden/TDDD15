@@ -1,0 +1,43 @@
+---
+title: "Lab2 oskhi827"
+author: "Oskar Hidén - oskhi827"
+date: "9/17/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Question 1
+```{r}
+#, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center'
+library(HMM)
+
+states = c("Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7", "Z8", "Z9", "Z10")
+symbols = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
+#start_prob = rep(0, 10)
+#start_prob[1] = 1
+start_prob = NULL
+sur_state = function(x){
+  state = x%%10
+  if (state ==0) {
+    state=10
+  }
+  return(state)
+}
+trans_prob = matrix(data=0, nrow = 10, ncol=10)
+for (i in 1:10) {
+  trans_prob[i,i] = 0.5
+  trans_prob[i,sur_state(i+1)] = 0.5
+}
+emmis_prob = matrix(data=0, nrow = 10, ncol=10)
+for (i in 1:10) {
+  for (j in -2:2) {
+    emmis_prob[i,sur_state(i+j)] = 0.5
+  }
+}
+HMM = initHMM(states, symbols, start_prob, trans_prob, emmis_prob)
+print(HMM)
+
+```

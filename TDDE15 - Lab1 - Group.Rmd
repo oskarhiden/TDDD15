@@ -23,11 +23,11 @@ library(bnlearn)
 data('asia')
 
 #First bayes network
-structure1bayes=hc(asia)
+structure1bayes=hc(asia, score = "bic", restart = 1)
 
 #Iterating through bayes networks until I het two equal
 for (i in 1:100){
-  structurebayes=hc(asia, restart = 1)
+  structurebayes=hc(asia, score="aic", restart = 1)
   
   #Comparison of bayes networks
   boolean=all.equal(structure1bayes,structurebayes)
@@ -36,17 +36,19 @@ for (i in 1:100){
     break
   }
   structure1bayes=structurebayes
-  
 }
+
+#structurebayes = hc(asia, score ="bde", restart = 50)
 
 #Showing the difference between the networks
 plot(structurebayes)
 plot(structure1bayes)
+all.equal(structure1bayes,structurebayes)
 
 
 ```
 
-When doing the hill climbing algorithm the log score of the graph given the data is calculated for each possible added/removed or flipped arc. The "move" that improves the score the most is added but this doesn't necessarily lead to the global optima. The probability of reaching a global optima can be increased by adding more random restarts. In this case an edge is reversed, which would give the same score in the HC algorithm, therfore HC will evaluate these two networks as equal and not move between them.
+When doing the hill climbing algorithm the log score of the graph given the data is calculated for each possible added/removed or flipped arc. The "move" that improves the score the most is added but this doesn't necessarily lead to the global optima. The probability of reaching a global optima can be increased by adding more random restarts. In this case we used HC with two different scoring systems when evaluating the networks. Therfore we get two different networks.
 
 ## Task 2
 Learn a BN from 80 % of the Asia dataset. The dataset is included in the bnlearn
@@ -187,8 +189,14 @@ classify = function(parameters, classify_data, info){
   }
 }
 
-train = asia[(1:floor(0.8*length(asia[,1]))),]
-test = asia[(floor(0.8*length(asia[,1])+1):length(asia[,1])),]
+#split dataset into traning and test
+n=dim(asia)[1] 
+set.seed(12345) 
+id=sample(1:n, floor(n*0.8)) 
+
+train=asia[id,]
+test=asia[-id,]
+
 real_s = test$S
 new_parameters = bn.fit(network, train) #Network from question2.
 
