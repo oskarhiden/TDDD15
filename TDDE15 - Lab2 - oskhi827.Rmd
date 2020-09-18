@@ -38,7 +38,6 @@ for (i in 1:10) {
   }
 }
 HMM = initHMM(states, symbols, start_prob, trans_prob, emmis_prob)
-print(HMM)
 
 ```
 
@@ -47,32 +46,96 @@ print(HMM)
 ```{r}
 N = 100
 sim = simHMM(HMM, N)
-sim
 ```
 
-## Question 3
+## Question 3 & 4
 ```{r}
 observed = sim$observation
-
-miss_class = function(table){
-  return(1-(sum(diag(table))/sum(table)))
-}
 
 # filterd alpha --Alpha uses all observations up to point t to estimate Zt
 alpha_log = forward(HMM, observed)
 alpha = exp(alpha_log)
 most_prob_a = apply(alpha, MARGIN = 2, which.max)
 plot(most_prob_a, col="blue")
-lines(sim$states)
-sum(sim$states==most_prob_a)/100
+lines(sim$states, col="green")
 
-# smoothed alpha*beta  -- Alpha beta uses all observations (to T) to estimate Zt. "which is better"
-alpha_beta_log = backward(HMM, observed)
-alpha_beta = exp(alpha_beta_log)
+fi_acc = sum(sim$states==most_prob_a)/100
+cat("Filtered accuracy:", fi_acc)
+
+# Beta.
+beta_log = backward(HMM, observed)
+beta = exp(beta_log)
+
+# smoothed alpha*beta -- Alpha beta uses all observations (to T) to estimate Zt. "which is better"
+alpha_beta = alpha*beta
 most_prob_ab = apply(alpha_beta, MARGIN = 2, which.max)
-plot(most_prob_ab, col="blue")
-lines(sim$states)
+plot(most_prob_ab, col="blue",)
+lines(most_prob_a)
+lines(sim$states, col="green")
+legend("topright", c("Smooth pred", "Alpha pred", "True state"),
+       col=c("blue", "black", "green"), lty=1:2, cex=0.5)
 
-sum(sim$states==most_prob_ab)/100
+sm_acc = sum(sim$states==most_prob_ab)/100
+cat("Smoothing accuracy:", sm_acc)
+
+# Normalize??
+
+
+# Most prob path
+viterbi_pred = viterbi(HMM, observed)
+plot(viterbi_pred, col="blue",)
+lines(sim$states, col="green")
+legend("topright", c("Viterbi pred", "True state"),
+       col=c("blue", "green"), lty=1:2, cex=0.5)
+
+vi_acc = sum(sim$states==viterbi_pred)/100
+cat("Most prob path accuracy:", vi_acc)
 
 ```
+
+## Question 5
+```{r}
+observed = sim$observation
+
+# filterd alpha --Alpha uses all observations up to point t to estimate Zt
+alpha_log = forward(HMM, observed)
+alpha = exp(alpha_log)
+most_prob_a = apply(alpha, MARGIN = 2, which.max)
+plot(most_prob_a, col="blue")
+lines(sim$states, col="green")
+
+fi_acc = sum(sim$states==most_prob_a)/100
+cat("Filtered accuracy:", fi_acc)
+
+# Beta.
+beta_log = backward(HMM, observed)
+beta = exp(beta_log)
+
+# smoothed alpha*beta -- Alpha beta uses all observations (to T) to estimate Zt. "which is better"
+alpha_beta = alpha*beta
+most_prob_ab = apply(alpha_beta, MARGIN = 2, which.max)
+plot(most_prob_ab, col="blue",)
+lines(most_prob_a)
+lines(sim$states, col="green")
+legend("topright", c("Smooth pred", "Alpha pred", "True state"),
+       col=c("blue", "black", "green"), lty=1:2, cex=0.5)
+
+sm_acc = sum(sim$states==most_prob_ab)/100
+cat("Smoothing accuracy:", sm_acc)
+
+# Normalize??
+
+
+# Most prob path
+viterbi_pred = viterbi(HMM, observed)
+plot(viterbi_pred, col="blue",)
+lines(sim$states, col="green")
+legend("topright", c("Viterbi pred", "True state"),
+       col=c("blue", "green"), lty=1:2, cex=0.5)
+
+vi_acc = sum(sim$states==viterbi_pred)/100
+cat("Most prob path accuracy:", vi_acc)
+
+```
+
+
