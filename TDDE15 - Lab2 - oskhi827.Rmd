@@ -78,8 +78,14 @@ legend("topright", c("Smooth pred", "Alpha pred", "True state"),
 sm_acc = sum(sim$states==most_prob_ab)/100
 cat("Smoothing accuracy:", sm_acc)
 
-# Normalize??
+# Normalize
+norm_fact =  apply(alpha, 2, sum)
+filtered = apply(alpha, 1, "/", norm_fact )
+filtered = t(filtered)
 
+norm_fact = apply(alpha_beta, 2, sum)
+smoothing = apply(alpha_beta, 1, "/", norm_fact)
+smoothing = t(smoothing)
 
 # Most prob path
 viterbi_pred = viterbi(HMM, observed)
@@ -95,6 +101,8 @@ cat("Most prob path accuracy:", vi_acc)
 
 ## Question 5
 ```{r}
+N = 100
+sim = simHMM(HMM, N)
 observed = sim$observation
 
 # filterd alpha --Alpha uses all observations up to point t to estimate Zt
@@ -123,8 +131,14 @@ legend("topright", c("Smooth pred", "Alpha pred", "True state"),
 sm_acc = sum(sim$states==most_prob_ab)/100
 cat("Smoothing accuracy:", sm_acc)
 
-# Normalize??
+# Normalize
+norm_fact =  apply(alpha, 2, sum)
+filtered = apply(alpha, 1, "/", norm_fact )
+filtered = t(filtered)
 
+norm_fact = apply(alpha_beta, 2, sum)
+smoothing = apply(alpha_beta, 1, "/", norm_fact)
+smoothing = t(smoothing)
 
 # Most prob path
 viterbi_pred = viterbi(HMM, observed)
@@ -138,4 +152,27 @@ cat("Most prob path accuracy:", vi_acc)
 
 ```
 
+The filtered prediction uses all obervations up to the time t to predict Xt, where the smoothed prediciton uses all observed values (X0...XT) in its prediction. Smoothed prediction uses more information and therfore it should in general be more accurate.
+
+In general the smoothed is also better than most prob path, Constrain, valid path, prob i sell or ecual accurate
+
+## Question 6
+```{r}
+library(entropy)
+entr = apply(filtered, 2, entropy.empirical) 
+entropy.empirical(rep(0.1,10)) # Max entrpy value!
+```
+In the first iterations the entrpy drops since we get more information, and therfore we get a better prediction. But after a couple of iterations the entropy increases again. Therfore we do not always get a better prediction with more observations. For some t the entropy is 0, and then we are sure of our predicton. But then the entropy increases agin. depending on the combination of observations we could get a better prediction. 
+
+## Question 7
+```{r}
+
+# Last prediction distribution of Z
+z_T_prob = filtered[,dim(filtered)[2]]
+
+z_101_prob = z_T_prob%*%HMM$transProbs
+z_101_prob
+z_101_pred = which.max(z_101_prob)
+cat("Prediction of state in timestep 101 is: ", z_101_pred)
+```
 
