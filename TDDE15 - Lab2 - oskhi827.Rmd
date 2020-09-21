@@ -118,7 +118,6 @@ beta = exp(backward(HMM, observed))
 # smoothed alpha*beta -- Alpha beta uses all observations (to T) to estimate Zt. "which is better"
 alpha_beta = alpha*beta
 most_prob_ab = apply(alpha_beta, MARGIN = 2, which.max)
-plot(most_prob_ab, col="blue",)
 
 sm_acc = sum(sim$states==most_prob_ab)/100
 cat("Smoothing accuracy:", sm_acc)
