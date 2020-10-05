@@ -1,3 +1,18 @@
+---
+title: "TDDE15_Lab3_oskhi827"
+author: "Oskar Hidén - oskhi827"
+date: "10/5/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+require(extrafont)
+    # need only do this once!
+    font_import(pattern="[A/a]rial", prompt=FALSE)
 # By Jose M. Peña and Joel Oskarsson.
 # For teaching purposes.
 # jose.m.pena@liu.se.
@@ -216,7 +231,6 @@ MovingAverage <- function(x, n){
   return (rsum)
 }
 
-# Epsilon 0.5
 for(j in c(0.5,0.75,0.95)){
   q_table <- array(0,dim = c(H,W,4))
   reward <- NULL
@@ -232,7 +246,7 @@ for(j in c(0.5,0.75,0.95)){
   plot(MovingAverage(reward,100),type = "l")
   plot(MovingAverage(correction,100),type = "l")
 }
-# Epsilon 0.1
+
 for(j in c(0.5,0.75,0.95)){
   q_table <- array(0,dim = c(H,W,4))
   reward <- NULL
@@ -270,3 +284,5 @@ for(j in c(0,0.2,0.4,0.66)){
   
   vis_environment(i, gamma = 0.6, beta = j)
 }
+```
+
