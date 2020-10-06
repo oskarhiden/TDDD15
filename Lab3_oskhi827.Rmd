@@ -6,13 +6,10 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center', results='asis')
 ```
 
 ```{r}
-require(extrafont)
-    # need only do this once!
-    font_import(pattern="[A/a]rial", prompt=FALSE)
 # By Jose M. Peña and Joel Oskarsson.
 # For teaching purposes.
 # jose.m.pena@liu.se.
@@ -28,7 +25,7 @@ library(ggplot2)
 # If you do not see four arrows in line 16, then do the following:
 # File/Reopen with Encoding/UTF-8
 
-arrows <- c("↑", "→", "↓", "←")
+arrows <- c("^", ">", "v", "<")
 action_deltas <- list(c(1,0), # up
                       c(0,1), # right
                       c(-1,0), # down
@@ -65,11 +62,11 @@ vis_environment <- function(iterations=0, epsilon = 0.5, alpha = 0.1, gamma = 0.
   print(ggplot(df,aes(x = y,y = x)) +
           scale_fill_gradient(low = "white", high = "green", na.value = "red", name = "") +
           geom_tile(aes(fill=val6)) +
-          geom_text(aes(label = val1),size = 4,nudge_y = .35,na.rm = TRUE) +
-          geom_text(aes(label = val2),size = 4,nudge_x = .35,na.rm = TRUE) +
-          geom_text(aes(label = val3),size = 4,nudge_y = -.35,na.rm = TRUE) +
-          geom_text(aes(label = val4),size = 4,nudge_x = -.35,na.rm = TRUE) +
-          geom_text(aes(label = val5),size = 10) +
+          geom_text(aes(label = val1),size = 2,nudge_y = .35,na.rm = TRUE) +
+          geom_text(aes(label = val2),size = 2,nudge_x = .35,na.rm = TRUE) +
+          geom_text(aes(label = val3),size = 2,nudge_y = -.35,na.rm = TRUE) +
+          geom_text(aes(label = val4),size = 2,nudge_x = -.35,na.rm = TRUE) +
+          geom_text(aes(label = val5),size = 5) +
           geom_tile(fill = 'transparent', colour = 'black') + 
           ggtitle(paste("Q-table after ",iterations," iterations\n",
                         "(epsilon = ",epsilon,", alpha = ",alpha,"gamma = ",gamma,", beta = ",beta,")")) +
@@ -199,7 +196,7 @@ reward_map[2:4,3] <- -1
 
 q_table <- array(0,dim = c(H,W,4))
 
-vis_environment()
+#vis_environment()
 
 for(i in 1:10000){
   foo <- q_learning(start_state = c(3,1))
@@ -208,6 +205,10 @@ for(i in 1:10000){
     vis_environment(i)
 }
 
+```
+
+
+```{r}
 # Environment B (the effect of epsilon and gamma)
 
 H <- 7
@@ -221,8 +222,11 @@ reward_map[4,8] <- 10
 
 q_table <- array(0,dim = c(H,W,4))
 
-vis_environment()
+#vis_environment()
+```
 
+\newpage
+```{r}
 MovingAverage <- function(x, n){
   
   cx <- c(0,cumsum(x))
@@ -231,6 +235,7 @@ MovingAverage <- function(x, n){
   return (rsum)
 }
 
+# Epsilon 0.5
 for(j in c(0.5,0.75,0.95)){
   q_table <- array(0,dim = c(H,W,4))
   reward <- NULL
@@ -245,8 +250,10 @@ for(j in c(0.5,0.75,0.95)){
   vis_environment(i, gamma = j)
   plot(MovingAverage(reward,100),type = "l")
   plot(MovingAverage(correction,100),type = "l")
+  cat("\n\n\\pagebreak\n")
+  writeLines("ValueForV")
 }
-
+# Epsilon 0.1
 for(j in c(0.5,0.75,0.95)){
   q_table <- array(0,dim = c(H,W,4))
   reward <- NULL
@@ -261,8 +268,13 @@ for(j in c(0.5,0.75,0.95)){
   vis_environment(i, epsilon = 0.1, gamma = j)
   plot(MovingAverage(reward,100),type = "l")
   plot(MovingAverage(correction,100),type = "l")
+  cat("\n\n\\pagebreak\n")
+  writeLines("ValueForV")
 }
+```
 
+
+```{r}
 # Environment C (the effect of beta).
 
 H <- 3
@@ -274,7 +286,7 @@ reward_map[1,6] <- 10
 
 q_table <- array(0,dim = c(H,W,4))
 
-vis_environment()
+#vis_environment()
 
 for(j in c(0,0.2,0.4,0.66)){
   q_table <- array(0,dim = c(H,W,4))
@@ -285,4 +297,6 @@ for(j in c(0,0.2,0.4,0.66)){
   vis_environment(i, gamma = 0.6, beta = j)
 }
 ```
+Effect of beta: Beta is the probability to slip. The probability to slip is affecting the Agent after it takes an action. This probability of slipping is taken into account in when creating the policy, because we update Q(S,A) depending on what action we took and where the agent ended up. 
+
 
