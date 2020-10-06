@@ -7,7 +7,11 @@
 #####################################################################################################
 
 # install.packages("keras")
+
+library(tensorflow)
+install_tensorflow()
 library(keras)
+
 
 # install.packages("ggplot2")
 # install.packages("vctrs")
@@ -146,6 +150,7 @@ DeepPolicy_train <- function(states, actions, goal, gamma){
   inputs <- matrix(data = states, ncol = 2, byrow = TRUE)
   inputs <- cbind(inputs,rep(goal[1],nrow(inputs)))
   inputs <- cbind(inputs,rep(goal[2],nrow(inputs)))
+  # Store States in col 1 & 2 (x and y) and then store goal for each row in col 3 and 4(x and y).
   
   targets <- array(data = actions, dim = nrow(inputs))
   targets <- to_categorical(targets-1, num_classes = 4)  

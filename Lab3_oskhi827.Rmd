@@ -206,6 +206,7 @@ for(i in 1:10000){
 }
 
 ```
+Is it optimal: Its optimal if it finds the correct expected reward for each node ( reward * gamma^(#steps)). It not optimal but ist staring to build the optimal Q, but for example top right corner is not optimal. prob due to low prob to find there. 
 
 
 ```{r}
