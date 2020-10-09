@@ -1,7 +1,12 @@
 ---
-title: "TDDE15_Lab3_oskhi827"
-author: "Oskar Hidén - oskhi827"
-date: "10/5/2020"
+title: "TDDE15_Lab3_group"
+author:
+- Alice Velander(alive213) 
+- Oskar Hidén (oskhi827) 
+- David Björelind (davbj395) 
+- Samuel Persson (sampe028)
+
+date: "10/8/2020"
 output: pdf_document
 ---
 

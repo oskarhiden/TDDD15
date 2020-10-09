@@ -244,7 +244,6 @@ for(i in 1:5000){
 }
 
 show_validation(5000) 
-
 # Environment E (training with top row goal positions)
 
 train_goals <- list(c(4,1), c(4,2), c(4,3), c(4,4))
