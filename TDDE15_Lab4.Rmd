@@ -1,0 +1,118 @@
+---
+title: "Lab4"
+author: "Oskar Hidén - oskhi827"
+date: "10/18/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## 2.1 - Implementing GP Regression
+
+```{r}
+#install.packages('kernlab')
+#install.packages("AtmRay") # To make 2D grid like in Matlab's meshgrid.
+library(kernlab)
+library(AtmRay)
+
+# ------- TEST ----
+#ell <- 1
+#SEkernel <- rbfdot(sigma = 1/(2*ell^2)) # Note how I reparametrize the rbfdot (which is the SE kernel) in kernlab.
+#SEkernel(1,2) # Just a test - evaluating the kernel in the points x=1 and x'=2.
+# Computing the whole covariance matrix K from the kernel. Just a test.
+#kernelMatrix(kernel = SEkernel, x = X, y = Xstar) # So this is K(X,Xstar).
+# ------End TEST--
+
+cov_function = function(X, Xstar){
+  return(kernelMatrix(kernel = SEkernel, x=X, y=Xstar))
+}
+
+# cov_function(1,2)
+
+posteriorGP = function(X_input, y_targets, k_cov_function, sigmaNoise=1, XStar){
+  
+  # wehre to inplement noise(sigmaNoise)?
+  A = k_cov_function(X_input, X_input)
+  A = A + diag(length(X_input))*sigmaNoise^2
+  L = t(chol(A)) # chol Returns t(L)
+  L_y = solve(L, y_targets)
+  alpha = solve(t(L), L_y)
+  
+  k_star = k_cov_function(X_input, XStar)
+  f_star = t(k_star)%*%alpha
+  v = solve(L,k_star)
+  
+  V_f_star = k_cov_function(XStar, XStar) - t(v)%*%v
+  return(list("mean"=f_star, "cov" = V_f_star))
+}
+
+sigma_f = 1
+ell = 0.3
+SEkernel <- rbfdot(sigma = 1/(2*ell^2))
+
+sigma_n = 0.1
+x=0.4
+y=0.719
+xGrid <- seq(-1,1,length=20) # x-star??
+
+posterior = posteriorGP(x, y, cov_function, sigma_n, xGrid)
+
+plot(xGrid, posterior$mean, ylim = c(-2.5,2.5)) # posterior mean
+std_dev = sqrt(diag(posterior$cov))
+points(xGrid, posterior$mean + 1.96*std_dev, col="blue")
+points(xGrid, posterior$mean - 1.96*std_dev, col="blue")
+
+#max(posterior$mean)
+
+# 3 
+x = c(0.4, -0.6)
+y = c(0.719 , -0.044)
+posterior = posteriorGP(x, y, cov_function, sigma_n, xGrid)
+
+plot(xGrid, posterior$mean, ylim = c(-2.5,2.5)) # posterior mean
+std_dev = sqrt(diag(posterior$cov))
+points(xGrid, posterior$mean + 1.96*std_dev, col="blue")
+points(xGrid, posterior$mean - 1.96*std_dev, col="blue")
+
+
+# 4
+x = c(-1.0, -0.6, -0.2, 0.4, 0.8)
+y = c(0.768, -0.044, -0.940, 0.719, -0.664)
+posterior = posteriorGP(x, y, cov_function, sigma_n, xGrid)
+
+plot(xGrid, posterior$mean, ylim = c(-2.5,2.5)) # posterior mean
+std_dev = sqrt((diag(posterior$cov)))
+points(xGrid, posterior$mean + 1.96*std_dev, col="blue")
+points(xGrid, posterior$mean - 1.96*std_dev, col="blue")
+
+# 5
+sigma_f = 1
+ell = 1
+SEkernel <- rbfdot(sigma = 1/(2*ell^2))
+
+x = c(-1.0, -0.6, -0.2, 0.4, 0.8)
+y = c(0.768, -0.044, -0.940, 0.719, -0.664)
+posterior = posteriorGP(x, y, cov_function, sigma_n, xGrid)
+
+plot(xGrid, posterior$mean, ylim = c(-2.5,2.5)) # posterior mean
+std_dev = sqrt((diag(posterior$cov)))
+points(xGrid, posterior$mean + 1.96*std_dev, col="blue")
+points(xGrid, posterior$mean - 1.96*std_dev, col="blue")
+
+
+```
+
+The two plots has the same sigma_f but different l-values. The last plot is smoother, with a higher l value. And the 95% confidence intervall is closer to posterior mean. 
+
+
+
+## 2.2 - GP Regression with kernlab
+```{r}
+
+temp = read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv", header=TRUE, sep=";")
+
+time = 
+  
+```

@@ -174,8 +174,8 @@ q_learning <- function(start_state, epsilon = 0.5, alpha = 0.1, gamma = 0.95,
     q_action_value = q_table[current_state[1], current_state[2], action]
     next_exp_r = max(q_table[new_state[1], new_state[2],])
     
-    correction = gamma*next_exp_r - q_action_value
-    q_table[current_state[1], current_state[2],action] <<- q_action_value + alpha*(reward + correction)
+    correction = reward + gamma*next_exp_r - q_action_value
+    q_table[current_state[1], current_state[2],action] <<- q_action_value + alpha*(correction)
     episode_correction = episode_correction+correction
     current_state=new_state
     if(reward!=0)
@@ -215,7 +215,7 @@ for(i in 1:10000){
 The agent visited the states with -1 and started to update those action values. 
 
 \textbf{Is the greedy policy optimal after 10000 episodes:}
-Its optimal if it finds the correct expected reward for each node ( reward * gamma^(#steps)). It not optimal but ist staring to build the optimal Q, but for example top right corner is not optimal. prob due to low prob to find there. 
+A policy is optimal if it maximizes the expected discounted return, no matter what Q-values it was derived from. The greedy policy is optimal after 10000 episodes, because we decide on the best action in every given case.
 
 \textbf{Does the agent learn that there are multiple paths to get to the positive reward ?
 If not, what could be done to make the agent learn this ?}
@@ -314,8 +314,7 @@ for(j in c(0,0.2,0.4,0.66)){
 }
 ```
 \textbf{Effect of beta:}
-Beta is the probability to slip. The probability to slip is affecting the Agent after it takes an action. Therfore this probability of slipping is taken into account in when creating the policy, because we update Q(S,A) depending on what action we took and where the agent ended up. 
-
+Beta is the probability to slip. The probability to slip is affecting the Agent after it takes an action. Therfore this probability of slipping is taken into account in when creating the policy, because we update Q(S,A) depending on what action we took and where the agent ended up. We can se that with the higher beta (0.66) the policy decide to walk away from the negative reward to make sure it do not slip into it. And with lower beta (0) the policy take the shortest path and decide to walk right (along the negative rewards).
 
 ## Environment D
 ![](./Plotslab3/Pic1.png)

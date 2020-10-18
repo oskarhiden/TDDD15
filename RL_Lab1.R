@@ -157,8 +157,8 @@ q_learning <- function(start_state, epsilon = 0.5, alpha = 0.1, gamma = 0.95,
     q_action_value = q_table[current_state[1], current_state[2], action]
     next_exp_r = max(q_table[new_state[1], new_state[2],])
     
-    correction = gamma*next_exp_r - q_action_value
-    q_table[current_state[1], current_state[2],action] <<- q_action_value + alpha*(reward + correction)
+    correction = reward + gamma*next_exp_r - q_action_value
+    q_table[current_state[1], current_state[2],action] <<- q_action_value + alpha*(correction)
     episode_correction = episode_correction+correction
     current_state=new_state
     if(reward!=0)
