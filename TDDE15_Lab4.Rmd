@@ -110,7 +110,8 @@ The two plots has the same sigma_f but different l-values. The last plot is smoo
 
 ## 2.2 - GP Regression with kernlab
 ```{r}
-temp = read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv", header=TRUE, sep=";")
+temp = read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv",
+                header=TRUE,sep=";")
 
 time = (1:2190)
 nr_year = 2190/365
@@ -176,12 +177,12 @@ lines(time_red, mean_pred+1.96*predict(gp_model, time_red, type="sdeviation")) #
 # 3 - Scale and calculate with Algorithm 2.1
 mean = mean(temp_red)
 st_dev = sd(temp_red)
-temp_red_scale = (temp_red)
+temp_red_scale = scale(temp_red)
 
 # Find sigma_n
-#time_red_scale = scale(time_red)
-#quadratic_reg = lm(temp_red ~ time_red_scale + I(time_red_scale^2))
-#sigma_n = sd(quadratic_reg$residuals)
+time_red_scale = scale(time_red)
+quadratic_reg = lm(temp_red ~ time_red_scale + I(time_red_scale^2))
+sigma_n = sd(quadratic_reg$residuals)
 
 posteriorGP = function(X_input, y_targets, k_cov_function, sigmaNoise=1, XStar){
   A = k_cov_function(X_input, X_input)
