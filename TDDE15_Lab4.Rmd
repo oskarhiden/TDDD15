@@ -113,6 +113,94 @@ The two plots has the same sigma_f but different l-values. The last plot is smoo
 
 temp = read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv", header=TRUE, sep=";")
 
-time = 
+time = (1:2190)
+nr_year = 2190/365
+day = rep((1:365), nr_year)
+
+reduce_data = function(array , nth){
+  array[seq(1, length(array), nth)]
+}
+
+time_red = reduce_data(time, 5)
+day_red = reduce_data(day, 5)
+
+?kernelMatrix
+# ------OLD ----------
+# Set sqare exponential kernel function
+ell = 1
+sigma_f = 1
+se_kernel = function(ell, sigma_f){
+  SEkernel <- sigma_f*rbfdot(sigma = 1/(2*ell^2))
+}
+k = function(x, x_star, ell, sigma_f){
+  SEkernel <- rbfdot(sigma = 1/(2*ell^2))
+  return(kernelMatrix(kernel = SEkernel, x=x, y=x_star)*sigma_f^2)
+}
+# k(x, x_star, 1, 1) #Old k
+# ------End OLD------------
+
+set_se_kernel = function(ell, sigma_f){
+  se_kernel = function(x , y){
+    r_square = sum((x-y)*(x-y)) #euclidian distance
+    return(sigma_f^2*exp(-r_square/(2*ell^2)))
+  }
+  class(se_kernel) <- "kernel"
+  return(se_kernel)
+}
+
+se_kernel=set_se_kernel(ell =1, sigma_f=1)
+x = c(1, 3, 4)
+x_star = c(2, 3, 4)
+#kernelMatrix(kernel = se_kernel, x=x, y=x_star)
+
+k = function(x, x_star){
+  return(kernelMatrix(kernel = se_kernel, x=x, y=x_star))
+}
+k(x, x_star)
+
+
+# 2 - Find f with gausspr
+sigma_f = 20
+ell = 0.2
+se_kernel = set_se_kernel(ell=ell, sigma_f=sigma_f)
+
+# Find sigma_n
+temp_red = reduce_data(temp$temp,5)
+quadratic_reg = lm(temp_red ~ time_red + I(time_red^2))
+sigma_n = sd(quadratic_reg$residuals)
+
+gp_model = gausspr(x = time_red, y = temp_red, type="regression", kernel=se_kernel, var = sigma_n^2, variance.model=TRUE)
+
+mean_pred= predict(gp_model, time_red)
+plot(time_red, temp_red)
+points(time_red, mean_pred, type = "l", col="red")
+lines(time_red, mean_pred+1.96*predict(gp_model, time_red, type="sdeviation")) # wrong due to scaleing done by gausspr....
+
+
+# Scale data -> GP -> Scale back. To obtain correct.
+mean = mean(temp_red)
+st_dev = sd(temp_red)
+temp_red_scale = scale(temp_red)
+
+gp_model_scaled = gausspr(x = time_red, y = temp_red_scale, type="regression", kernel=se_kernel, var = sigma_n^2, variance.model=TRUE)
+
+# Scale back mean and standard deviation 
+mean_pred_scaled = predict(gp_model_scaled, time_red)
+mean_pred_new = mean_pred_scaled*st_dev+mean
+st_dev_scaled = predict(gp_model_scaled, time_red, type="sdeviation")
+st_dev_new = st_dev_scaled*st_dev
   
+# Plot mean and std
+plot(time_red, temp_red)
+lines(time_red, mean_pred_new, col ="red")
+lines(time_red, mean_pred_new+1.96*st_dev_new, col="blue")
+lines(time_red, mean_pred_new-1.96*st_dev_new, col="blue")
+mean_pred[100]
+mean_pred_new[100]
+
+
+
+
+# 3
+
 ```
