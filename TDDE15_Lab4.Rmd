@@ -94,8 +94,7 @@ The two plots has the same sigma_f but different l-values. The last plot is smoo
 
 ## Part 2 - GP Regression with kernlab
 ```{r}
-temp = read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv",
-                header=TRUE,sep=";")
+temprature = read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv",header=TRUE,sep=";")
 time = (1:2190)
 nr_year = 2190/365
 day = rep((1:365), nr_year)
@@ -104,7 +103,7 @@ reduce_data = function(array , nth){
   array[seq(1, length(array), nth)]
 }
 
-day = reduce_data(temp$temp,5)
+temp = reduce_data(temprature$temp,5)
 time = reduce_data(time, 5)
 day = reduce_data(day, 5)
 
@@ -118,12 +117,14 @@ set_se_kernel = function(ell, sigma_f){
 }
 
 se_kernel = set_se_kernel(ell=1, sigma_f=1)
+
 # Evaluate kernel in x=1 and x'=2
 se_kernel(1,2)
 
 k = function(x, x_star){
   return(kernelMatrix(kernel = se_kernel, x=x, y=x_star))
 }
+
 # Evaluate the covariance matrix, k
 x = c(1, 3, 4)
 x_star = c(2, 3, 4)
@@ -136,56 +137,61 @@ ell = 0.2
 se_kernel = set_se_kernel(ell=ell, sigma_f=sigma_f)
 
 # Find sigma_n
-quadratic_reg = lm(day ~ time + I(time^2))
+quadratic_reg = lm(temp ~ time + I(time^2))
 sigma_n = sd(quadratic_reg$residuals)
 
-gp_model = gausspr(x = time, y = day, type="regression", kernel=se_kernel, var = sigma_n^2, variance.model=TRUE)
+gp_model = gausspr(x = time, y = temp, type="regression", kernel=se_kernel, var = sigma_n^2, variance.model=TRUE)
 
-mean_pred= predict(gp_model, time)
-plot(time, day)
+mean_pred = predict(gp_model, time)
+plot(time, temp)
 points(time, mean_pred, type = "l", col="red")
-lines(time, mean_pred+1.96*predict(gp_model, time, type="sdeviation")) # wrong due to scaleing done by gausspr....
+#lines(time, mean_pred + 1.96 * predict(gp_model, time, type="sdeviation")) # ---- wrong due to scaleing done by gausspr....(bugg)
+
 
 # 3 - Scale and calculate with Algorithm 2.1
-mean = mean(day)
-st_dev = sd(day)
-day_scale = scale(day)
+mean_temp = mean(temp)
+sd_temp = sd(temp)
+time_scale = scale(time)
+temp_scale = scale(temp)
 
 # Find sigma_n
-time_scale = scale(time)
-quadratic_reg = lm(day ~ time_scale + I(time_scale^2))
+quadratic_reg = lm(temp_scale ~ time_scale + I(time_scale^2))
 sigma_n = sd(quadratic_reg$residuals)
 
-post_gp = posteriorGP(time_scale, day_scale, k, sigma_n, time_scale)
-st_dev_new = sqrt(diag(post_gp$cov))
-mean_pred_new = post_gp$mean*st_dev+mean
-plot(time, day)
+post_gp = posteriorGP(time_scale, temp_scale, k, sigma_n, time_scale)
+st_dev_new = sqrt(diag(post_gp$cov))*sd_temp
+mean_pred_new = post_gp$mean*sd_temp+mean_temp
+plot(time, temp)
 lines(time, mean_pred_new, col ="red")
 lines(time, mean_pred_new+1.96*st_dev_new, col="blue")
 lines(time, mean_pred_new-1.96*st_dev_new, col="blue")
+
 
 # 4 - use of Day
 day_scale = scale(day)
+
 #Find sigma_n
-time_scale = scale(time)
-quadratic_reg = lm(day ~ day_scale + I(day_scale^2))
+quadratic_reg = lm(temp_scale ~ day_scale + I(day_scale^2))
 sigma_n = sd(quadratic_reg$residuals)
 
+post_gp = posteriorGP(day_scale, temp_scale, k, sigma_n, day_scale)
+st_dev_day = sqrt(diag(post_gp$cov))*sd_temp
+mean_pred_day = post_gp$mean*sd_temp+mean_temp
+
 # old plot
-plot(time, day)
+plot(time, temp)
 lines(time, mean_pred_new, col ="red")
 lines(time, mean_pred_new+1.96*st_dev_new, col="blue")
 lines(time, mean_pred_new-1.96*st_dev_new, col="blue")
+# new lines from day
+lines(time, mean_pred_day, col ="orange")
+lines(time, mean_pred_day+1.96*st_dev_day, col="green")
+lines(time, mean_pred_day-1.96*st_dev_day, col="green")
+```
+Pros and cons of each models?
 
-post_gp = posteriorGP(day_scale, day_scale, k, sigma_n, day_scale)
-st_dev_new = sqrt(diag(post_gp$cov))
-mean_pred_new = post_gp$mean*st_dev+mean
-lines(time, mean_pred_new, col ="black")
-lines(time, mean_pred_new+1.96*st_dev_new, col="green")
-lines(time, mean_pred_new-1.96*st_dev_new, col="green")
-
-
-# 5 - gen periodic kernel
+```{r}
+# 5 - Generalization periodic kernel
 sigma_f = 20
 ell_1 = 1
 ell_2 = 10
@@ -194,30 +200,51 @@ d = 365/sd(time)
 set_gen_kernel = function(ell_1, ell_2, sigma_f, d){
   gen_kernel = function(x , y){
     r_square = sum((x-y)*(x-y)) #euclidian distance ^2
- 
     return(sigma_f^2* exp(-sin(pi*sqrt(r_square)/d)/(ell_1^2)) * exp(-r_square/(2*ell_2^2)))
   }
   class(gen_kernel) <- "kernel"
   return(gen_kernel)
 }
 
-gen_kernel = set_gen_kernel(ell_1, ell_2, sigma_f, d)
 k_gen = function(x, x_star){
   return(kernelMatrix(kernel = gen_kernel, x=x, y=x_star))
 }
 
-gp_model = gausspr(x = time, y = day, type="regression", kernel=se_kernel, var = sigma_n^2, variance.model=TRUE)
+# Set sigma_n
+quadratic_reg = lm(temp ~ time + I(time^2))
+sigma_n = sd(quadratic_reg$residuals)
 
-mean_pred = predict(gp_model, time)
-plot(time, day)
-points(time, mean_pred, type = "l", col="red")
+gen_kernel = set_gen_kernel(ell_1, ell_2, sigma_f, d)
+gp_model = gausspr(x = time, y = temp, type="regression", kernel=gen_kernel, var = sigma_n^2, variance.model=TRUE)
 
-
+mean_pred_gen = predict(gp_model, time)
+plot(time, temp)
+points(time, mean_pred, type="l", col="red")
+points(time, mean_pred_day, type = "l", col="blue")
+points(time, mean_pred_gen, type = "l", col="green")
 
 ```
+Discuss the results:
+When predicting using time and sqare exponential kernel we have a low correlation between the same date between two consecutive years. But when using day and square exponential kernel we assume the same correlation between the same date, no mather which year that dat is from. And we get a prediction that does not take the long term change (ex. warmer winters) into account. Day is not that smooth when we change year, because day=1 and day=365 will not get a strong correlation, even tho they are close.
+
+With the periodic kernel we give two ecual dates a stronger correlation if they are in two consecutive years. We also mannage to capture the long term trend better, because of the second exp() of the kernel.
+
 
 ## Part 3 - GP Classification with kernlab
 ```{r}
 #install.packages("AtmRay") # To make 2D grid like in Matlab's meshgrid.
-#library(AtmRay)
+library(AtmRay)
+
+data <- read.csv("https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/banknoteFraud.csv", header=FALSE, sep=",")
+names(data) <- c("varWave","skewWave","kurtWave","entropyWave","fraud")
+data[,5] <- as.factor(data[,5])
+
+set.seed(111)
+SelectTraining <- sample(1:dim(data)[1], size = 1000,replace = FALSE)
+train = data[SelectTraining,]
+gp_fraud = gausspr(fraud ~ varWave + skewWave, data=train, type="classification")
+
+fraud_pred = predict(gp_fraud, train[,1:4])
+# Confusion matrix
+table(fraud_pred, train[,5])
 ```
