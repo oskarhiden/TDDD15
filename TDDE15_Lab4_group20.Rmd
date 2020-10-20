@@ -1,7 +1,12 @@
 ---
-title: "Lab4"
-author: "Oskar Hidén - oskhi827"
-date: "10/18/2020"
+title: "TDDE15_Lab4_group"
+author:
+- Alice Velander(alive213) 
+- Oskar Hidén (oskhi827) 
+- David Björelind (davbj395) 
+- Samuel Persson (sampe028)
+
+date: "10/20/2020"
 output: pdf_document
 ---
 
@@ -19,7 +24,7 @@ cov_function = function(X, Xstar){
   return(kernelMatrix(kernel = SEkernel, x=X, y=Xstar)) 
 }
 
-# Algorithm 2.1 sunns in n^3/6 instead of O(n^3). GP can be estimated faster, O(n) with eg. KISS-GP
+# Algorithm 2.1
 posteriorGP = function(X_input, y_targets, k_cov_function, sigmaNoise=1, XStar){
   A = k_cov_function(X_input, X_input)
   A = A + diag(length(X_input))*sigmaNoise^2
