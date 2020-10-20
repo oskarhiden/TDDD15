@@ -28,7 +28,7 @@ SimGP <- function(m = 0,K,x,nSim,...){
   return(f)
 }
 
-xGrid <- seq(-5,5,length=20)
+xGrid <- seq(-5,5,length=200)
 
 # Plotting one draw
 sigmaF <- 1
