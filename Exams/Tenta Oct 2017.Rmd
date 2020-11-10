@@ -1,0 +1,75 @@
+---
+title: "Tenta Oct 2017"
+author: "Oskar Hidén - oskhi827"
+date: "10/26/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center', results='asis')
+```
+
+## 1 - Graphical Models
+```{r}
+library(bnlearn)
+library(gRain)
+set.seed(123)
+data("asia")
+hc3<-hc(asia,restart=10,score="bde",iss=10)
+plot(hc3)
+
+# Learn conditional probabilities
+hc4<-bn.fit(hc3,asia,method="bayes")
+# create a grain object
+hc5<-as.grain(hc4)
+
+# check P(L _|_ B | S, A)
+# set observations and calculate potentials
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("yes", "yes", "yes"))
+# quarry to get posterior for L
+querygrain(obj, nodes = c("L"))
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("no", "yes", "yes"))
+querygrain(obj, nodes = c("L"))
+
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("no", "yes", "no"))
+querygrain(obj, nodes = c("L"))
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("yes", "yes", "no"))
+querygrain(obj, nodes = c("L"))
+
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("no", "no", "yes"))
+querygrain(obj, nodes = c("L"))
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("yes", "no", "yes"))
+querygrain(obj, nodes = c("L"))
+
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("no", "no", "no"))
+querygrain(obj, nodes = c("L"))
+obj = setEvidence(hc5, nodes = c("B", "S", "A"), states = c("yes", "no", "no"))
+querygrain(obj, nodes = c("L"))
+
+
+# p2
+library(bnlearn)
+set.seed(123)
+ss<-50000
+# Generate 50000 random graphs
+x<-random.graph(c("A","B","C","D","E"),num=ss,method="melancon",every=50,burn.in=30000)
+
+# Store unice graphs, 23977 found
+y<-unique(x)
+# cpdag returns the equivalence class of the uniqe BN:s stored in y
+z<-lapply(y,cpdag)
+
+# Try and cound nr of equlal moral graphs.
+r=0
+for(i in 1:length(y)) {
+  if(all.equal(y[[i]],z[[i]])==TRUE)
+    r<-r+1
+}
+
+# approximate the fraction of essential graphs by dividing total found by essential found: 
+length(y)/r
+#  The exact ratio according to the literature is 11.2
+
+
+```
+

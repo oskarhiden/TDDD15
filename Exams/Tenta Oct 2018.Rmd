@@ -1,0 +1,349 @@
+---
+title: "Tenta Oct 2018"
+author: "Oskar Hidén - oskhi827"
+date: "10/24/2020"
+output: pdf_document
+---
+
+```{ setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, out.width='.49\\linewidth', fig.width=5, fig.height=5,fig.show='hold',fig.align='center', results='asis')
+```
+
+## Graphical Models
+```{r}
+library(bnlearn)
+library(gRain)
+data("asia")
+
+set.seed(567)
+data("asia")
+ind <- sample(1:5000, 4000)
+tr <- asia[ind,]
+te <- asia[-ind,]
+
+#Crating an empty network
+b_net = empty.graph(names(asia))
+plot(b_net)
+
+# Adjacncy matrix (0L ensures that the number is stored as an integer instead of a double)
+adj = matrix(0L, ncol = 8, nrow = 8,
+             dimnames = list(names(asia), names(asia)))
+
+# Add edges in BN
+for (i in names(asia)) {
+  adj["S",i] = 1L
+}
+adj["S","S"] = 0L
+amat(b_net) = adj
+plot(b_net)
+
+get_error = function(b_net, tr, te, nr_data){
+  # learn parameters(potentials) conditioning on the bn-structure.
+  bn_pot = bn.fit(b_net, data=tr[1:nr_data,], method = "bayes")
+  bn_grain = as.grain(bn_pot)
+  
+  # Calculate prob given evidense (observations)
+  test_evid = te[,-2]
+  test_ans = te[,2]
+  nodes_ev = names(test_evid)
+  
+  pred_s =c()
+  for (j in 1:dim(test_evid[1])) {
+    # finding/evidance or potentials
+    obs = c()
+    for (i in 1:dim(test_evid)[2]) {
+      obs = c(obs, as.character(test_evid[j,i]))
+    }
+    
+    evid = setEvidence(bn_grain, nodes_ev, states = obs)
+    
+    # quergrain to get conditional distributon
+    node = c("S")
+    prob_s = querygrain(evid, nodes = node)
+    
+    if (prob_s$S[1]>prob_s$S[2]) {
+      pred_s=c(pred_s,"no")
+    }else{
+      pred_s=c(pred_s,"yes")
+    }
+  }
+  
+  table = table(pred_s,test_ans)
+  return (1 - sum(diag(table))/sum(table))
+  }
+  
+  totalError<-array(dim=6)
+  k<-1
+  for (i in c(10, 20, 50, 100, 1000, 2000)) {
+    totalError[k] = get_error(b_net, tr, te, nr_data = i)
+    k = k+1
+  }
+  totalError
+
+
+# Reverse edges:
+# Adjacncy matrix (0L ensures that the number is stored as an integer instead of a double)
+adj = matrix(0L, ncol = 8, nrow = 8,
+             dimnames = list(names(asia), names(asia)))
+
+# Add edges in BN
+for (i in names(asia)) {
+  adj[i,"S"] = 1L
+}
+adj["S","S"] = 0L
+amat(b_net) = adj
+plot(b_net)
+
+  totalError_rev<-array(dim=6)
+  k<-1
+  for (i in c(10, 20, 50, 100, 1000, 2000)) {
+    totalError_rev[k] = get_error(b_net, tr, te, nr_data = i)
+    k = k+1
+  }
+  totalError
+  totalError_rev
+```
+When using Naive Bayes, where we have an arrow from "S" to all other nodes, we have created a bunch of forks. That means that we assume all other varibles to be independent, when conditioning on "S". Which is used when calclating hte potentials. This makes the calculation quite eazy.
+
+When all arrows point torwards "S", there could be a dependece between all other nodes when conditioning on "S". Therfore this makes computation harder. Because we also need to find these other dependencies we need more training data. But wit enough data, since it do take those other dependencies into acount, we get a lower misclassification rate. We can also see in this experiment that the naive approach performs better on low ammounts of data, while the later model works better for larger ammounts of traning data.
+
+In other words,note that p(C|A_1,...,A_n) is proportional to P(A_1,...,A_n|C) p(C) by Bayes theorem. NB assumesthat P(A_1,...,A_n|C) factorizes into a product of factors p(A_i|C) whereas the alternative model assumesnothing. The NB’s assumption may hurt performance. This can be observed in the experiments.4
+
+*(Discussion from answers)*
+The NB classifier only needs to estimate the parameters for distributions of the form p(C) and P(A_i|C) where C is the class variable and A_i is a predictive attribute. The alternative model needs to estimate p(C) and P(C|A_1,...,A_n). Therefore, it requires more data to obtain reliable estimates (e.g. many of the parental combinations may not appear in the training data and this is actually why you should use method="bayes", to avoid zero relative frequency counters).This may hurt performance when little learning data is available. This is actually observed in the experiments above. However, when the size of the learning data increases, the alternative model should outperform NB, because the latter assumes that the attributes are independent given the class whereas the former does not. In other words, note that p(C|A_1,...,A_n) is proportional to P(A_1,...,A_n|C) p(C) by Bayes theorem. NB assumes that P(A_1,...,A_n|C) factorizes into a product of factors p(A_i|C) whereas the alternative model assumes nothing. The NB's assumption may hurt performance. This can be observed in the experiments.
+
+## 2 - Hidden Markow Models
+```{r}
+# Setting upp the HMM
+library(HMM)
+
+states = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
+symbols = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
+#start_prob = rep(0, 10)
+#start_prob[1] = 1
+start_prob = rep(0.1, 10)
+sur_state = function(x){
+  state = x%%10
+  if (state ==0) {
+    state=10
+  }
+  return(state)
+}
+trans_prob = matrix(data=0, nrow = 10, ncol=10)
+for (i in 1:10) {
+  trans_prob[i,i] = 0.5
+  trans_prob[i,sur_state(i+1)] = 0.5
+}
+emmis_prob = matrix(data=0, nrow = 10, ncol=10)
+for (i in 1:10) {
+  for (j in -2:2) {
+    emmis_prob[i,sur_state(i+j)] = 0.2
+  }
+}
+HMM = initHMM(states, symbols, start_prob, trans_prob, emmis_prob)
+
+# sim data from HMM
+set.seed(12345)
+N = 100
+sim = simHMM(HMM, N)
+observed = sim$observation
+
+# filtered distributon from HMM package. Filterd alpha --Alpha uses all observations up to point t to estimate Zt
+alpha_log = forward(HMM, observed)
+alpha = exp(alpha_log)
+most_prob_a = apply(alpha, MARGIN = 2, which.max)
+plot(most_prob_a, col="blue")
+lines(sim$states, col="green")
+
+# Implementing filtered distribution 
+a = matrix(NA, nrow = N, ncol = length(states))
+
+# a(z_0)
+for (i in 1:length(states)) {
+  a[1,i] = emmis_prob[i,as.integer(observed[1])]*start_prob[i]
+}
+
+# recursivly calculate a(z_t)
+for (t in 2:N) {
+  for (i in 1:length(states)) {
+    a[t,i] = emmis_prob[i,as.integer(observed[t])] * sum(a[t-1,]*trans_prob[,i])
+    # For each state z in time t, calculate the "prob"
+             # ^ Prob to observe symbol x given z
+                                                    # ^ sum upp "prob" to transission to z, given all z_t-1s fraction "probs"
+  }
+}
+
+# Calculate filter (nomalize)
+for (t in 1:N) {
+  a[t,] = a[t,]/sum(a[t, ])
+}
+# now it sums to 1:
+sum(a[3,])
+
+# make prediction from max prob. 
+filter_pred = apply(a, MARGIN = 1, FUN=which.max) # random when equal prob: which.max(rank(a[t,], ties.method = "random"))
+
+plot(sim$states)
+lines(most_prob_a, col="blue")
+lines(filter_pred, col="green", type = "p")
+
+```
+
+
+## 4 - Gaussian Processes
+```{r}
+library(kernlab)
+sigma2_f = 1
+ell = 0.5
+
+set_mattern_kernel = function(sigma2_f, ell){
+  mat_kern = function(x, x_star){
+    r = sqrt(sum((x - x_star)^2)) # Euclidian distance
+    p1 = sigma2_f*(1+sqrt(3)*r/ell)
+    p2 = exp(-sqrt(3)*r/ell)
+    return(p1*p2)
+  }
+  class(mat_kern) <- "kernel"
+  return(mat_kern)
+}
+
+Matern32 <- function(sigmaf = 1, ell = 1) 
+{
+  rval <- function(x, y = NULL) {
+      r = sqrt(crossprod(x-y));
+      return(sigmaf^2*(1+sqrt(3)*r/ell)*exp(-sqrt(3)*r/ell))
+    }
+  class(rval) <- "kernel"
+  return(rval)
+} 
+
+mat1 = set_mattern_kernel(sigma2_f, ell)
+mat2 = Matern32(sigma2_f, ell)
+
+zGrid = seq(0.01,1,by=0.01)
+x = 0
+
+y1 = kernelMatrix(mat1, x, zGrid)
+y2 = kernelMatrix(mat2, x, zGrid)
+
+plot(zGrid, y1, col="blue", type = "l")
+points(zGrid, y2)
+```
+Interpret the plot. Connect your discussion to the smoothness of f.
+
+The plot shows how the correlation(y-axis) between two point is reduced by the increase in distance(x-axis) between them. The smoothnes of f is grater if the correlation is keept larger for points that are futhrer from eachoter, the graph would in that case have a larger derivitive and decrease slower thorwards 0.
+
+*Answer*
+The graph plots Cov(f(0),f(z)), the correlation between two FUNCTION VALUES, as a function of the distance between two inputs (0 and z). As expected the correlation between two points on f decreases as the distance increases. The fact that points of f are dependent, as given by the covariance in the plot, makes the curves smooth. Nearby inputs will have nearby outputs when the correlation is large.
+
+```{r}
+mat3 = set_mattern_kernel(sigma2_f = 0.5, ell = 0.5 )
+
+y3 = kernelMatrix(mat3, x, zGrid)
+
+plot(zGrid, y1, col="blue", type = "l")
+points(zGrid, y3)
+
+```
+.. discuss the effect this change has on the distribution of f.
+
+$\sigma_f^2$ is the variance for x = x (where the graph crosses the y-axix), and decreasing $\sigma_f^2$ decreases the overall size of correlation. Allowing the overall variation form funciton mean to be lower. Changing $\sigma_f^2$ will not effective the relative covariance between the points on the curve (smoothness). 
+
+*Answer*
+Changing sigma2f will have not effect on the relative covariance between points on the curve, i.e. will not affect the smoothness. But lowering sigma2f makes the whole covariance curve lower. This means that the variance k(0,0) is lower and has the effect of giving a probability distribution over curves which is tighter (lower variance) around the mean function of the GP. This means that simulated curves from the GP will be less variable. 
+
+```{r}
+library(kernlab)
+# load("/Users/oskarhiden/Git/TDDD15/Exams/lidar.rData") # loading the data
+data = read.table("/Users/oskarhiden/Git/TDDD15/Exams/LidarData.txt", header = TRUE, dec = ".")
+data$LogRatio
+data$Distance
+
+# Algorithm 2.1 
+posteriorGP = function(X_input, y_targets, k_cov_function, sigmaNoise=1, XStar){
+  A = k_cov_function(X_input, X_input)
+  A = A + diag(length(X_input))*sigmaNoise^2
+  L = t(chol(A)) # chol Returns t(L)
+  L_y = solve(L, y_targets)
+  alpha = solve(t(L), L_y)
+  
+  k_star = k_cov_function(X_input, XStar)
+  f_star = t(k_star)%*%alpha
+  
+  v = solve(L,k_star)
+  V_f_star = k_cov_function(XStar, XStar) - t(v)%*%v
+  n = length(y_targets)
+  log_mar = -0.5 * (t(y_targets)%*%alpha) - sum(diag(L))-(n/2)*log(2*pi)
+  return(list("mean"=f_star, "cov" = V_f_star, "log" = log_mar))
+}
+# END alg
+
+k = function(x, x_star){
+  return(kernelMatrix(kernel, x, x_star))
+}
+
+sigma_f = 1
+ell = 1
+sigma_n = 0.05
+
+kernel = set_mattern_kernel(sigma2_f = sigma_f^2, ell = ell)
+
+gp_model = gausspr( x = data$Distance, y = data$LogRatio, type = "regression", kernel=kernel, var = sigma_n^2, variance.model = TRUE)
+
+mean_pred = predict(gp_model, data$Distance)
+
+# find conf intervall usign alg 2.1
+postGP = posteriorGP(X_input = data$Distance, y_targets = data$LogRatio, k_cov_function = k, sigmaNoise = sigma_n^2, XStar = data$Distance)
+sd_conf = sqrt(diag(postGP$cov))
+
+# find pred intervall
+sd_pred = sd_conf+sigma_n
+
+plot(data$Distance, data$LogRatio, main = "", cex = 0.5)
+lines(data$Distance, mean_pred, col = "red")
+lines(data$Distance, mean_pred+1.96*sd_conf, col = "blue")
+lines(data$Distance, mean_pred-1.96*sd_conf, col = "blue")
+lines(data$Distance, mean_pred+1.96*sd_pred, col = "green")
+lines(data$Distance, mean_pred-1.96*sd_pred, col = "green")
+legend("topright", inset = 0.02, legend = c("data","post mean","95% intervals for f", "95% predictive intervals for y"), 
+       col = c("black", "red", "blue", "green"), 
+       pch = c('o',NA,NA,NA), lty = c(NA,1,1,1), lwd = 2, cex = 0.55)
+```
+
+
+```{r}
+# with a larger ell
+ell=5
+
+kernel = set_mattern_kernel(sigma2_f = sigma_f^2, ell = ell)
+
+gp_model = gausspr( x = data$Distance, y = data$LogRatio, type = "regression", kernel=kernel, var = sigma_n^2, variance.model = TRUE)
+
+mean_pred = predict(gp_model, data$Distance)
+
+# find conf intervall usign alg 2.1
+postGP = posteriorGP(X_input = data$Distance, y_targets = data$LogRatio, k_cov_function = k, sigmaNoise = sigma_n^2, XStar = data$Distance)
+sd_conf = sqrt(diag(postGP$cov))
+
+# find pred intervall
+sd_pred = sd_conf+sigma_n
+
+plot(data$Distance, data$LogRatio, main = "", cex = 0.5)
+lines(data$Distance, mean_pred, col = "red")
+lines(data$Distance, mean_pred+1.96*sd_conf, col = "blue")
+lines(data$Distance, mean_pred-1.96*sd_conf, col = "blue")
+lines(data$Distance, mean_pred+1.96*sd_pred, col = "green")
+lines(data$Distance, mean_pred-1.96*sd_pred, col = "green")
+legend("topright", inset = 0.02, legend = c("data","post mean","95% intervals for f", "95% predictive intervals for y"), 
+       col = c("black", "red", "blue", "green"), 
+       pch = c('o',NA,NA,NA), lty = c(NA,1,1,1), lwd = 2, cex = 0.55)
+
+```
+*Discuss the differences in results from using the two length scales.*
+The two lenght scales creates a prior regarding the smoothnes of the function. A higher ell forces the posterior to be more smooth, as we can se in the two plots.
+
+*Answer*
+The larger length scale gives smoother fits. The smaller length scale seems to generate too jagged fits. 
+
+
+

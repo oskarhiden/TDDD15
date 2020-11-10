@@ -1,0 +1,412 @@
+bplist00—_WebMainResource’	
+_WebResourceData_WebResourceMIMEType_WebResourceTextEncodingName^WebResourceURL_WebResourceFrameNameO:©<html><head></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">##############################################################################
+# Questions 1: BNs.
+
+library(bnlearn)
+library(gRain)
+
+trials &lt;- 1000
+results &lt;- matrix(data = NA, nrow = trials, ncol = 4)
+
+for(i in 1:trials){
+  net &lt;- model2network("[D|C][C][A|C][Y|A:C]")
+  cptC &lt;- runif(2)
+  dim(cptC) &lt;- c(2)
+  dimnames(cptC) &lt;- list(c("1", "0"))
+  cptC &lt;- cptC/sum(cptC)
+  cptD &lt;- runif(4) 
+  dim(cptD) &lt;- c(2,2)
+  dimnames(cptD) &lt;- list("D" = c("1", "0"), "C" =  c("1", "0"))
+  cptD &lt;- prop.table(cptD,2)
+  cptA &lt;- runif(4) 
+  dim(cptA) &lt;- c(2,2)
+  dimnames(cptA) &lt;- list("A" = c("1", "0"), "C" =  c("1", "0"))
+  cptA &lt;- prop.table(cptA,2)
+  cptY &lt;- runif(8) 
+  dim(cptY) &lt;- c(2,2,2)
+  dimnames(cptY) &lt;- list("Y" = c("1", "0"), "A" =  c("1", "0"), "C" =  c("1", "0"))
+  cptY &lt;- prop.table(cptY,2:3)
+  netfit &lt;- custom.fit(net,list(C=cptC, D=cptD, A=cptA, Y=cptY))
+  netcom &lt;- compile(as.grain(netfit))
+  
+  pYAC &lt;- querygrain(setEvidence(netcom,nodes=c("A","C"),states=c("1","1")),c("Y"))
+  pYAc &lt;- querygrain(setEvidence(netcom,nodes=c("A","C"),states=c("1","0")),c("Y"))
+  pYaC &lt;- querygrain(setEvidence(netcom,nodes=c("A","C"),states=c("0","1")),c("Y"))
+  pYac &lt;- querygrain(setEvidence(netcom,nodes=c("A","C"),states=c("0","0")),c("Y"))
+
+  nondecC &lt;- (pYAc$Y[1] &lt;= pYAC$Y[1] &amp; pYac$Y[1] &lt;= pYaC$Y[1])
+  nonincC &lt;- (pYAc$Y[1] &gt;= pYAC$Y[1] &amp; pYac$Y[1] &gt;= pYaC$Y[1])
+  
+  pYAD &lt;- querygrain(setEvidence(netcom,nodes=c("A","D"),states=c("1","1")),c("Y"))
+  pYAd &lt;- querygrain(setEvidence(netcom,nodes=c("A","D"),states=c("1","0")),c("Y"))
+  pYaD &lt;- querygrain(setEvidence(netcom,nodes=c("A","D"),states=c("0","1")),c("Y"))
+  pYad &lt;- querygrain(setEvidence(netcom,nodes=c("A","D"),states=c("0","0")),c("Y"))
+
+  nondecD &lt;- (pYAd$Y[1] &lt;= pYAD$Y[1] &amp; pYad$Y[1] &lt;= pYaD$Y[1])
+  nonincD &lt;- (pYAd$Y[1] &gt;= pYAD$Y[1] &amp; pYad$Y[1] &gt;= pYaD$Y[1])
+  
+  results[i,] &lt;- c(nondecC,nonincC,nondecD,nonincD)
+}
+
+colSums(results[which(results[,1]==FALSE &amp; results[,2]==FALSE),])
+colSums(results[which(results[,1]==FALSE &amp; results[,2]==TRUE),])
+colSums(results[which(results[,1]==TRUE &amp; results[,2]==FALSE),])
+
+##############################################################################
+# Question 2: RL.
+
+# install.packages("ggplot2")
+# install.packages("vctrs")
+library(ggplot2)
+
+# If you do not see four arrows in line 16, then do the following:
+# File/Reopen with Encoding/UTF-8
+
+arrows &lt;- c("‚Üë", "‚Üí", "‚Üì", "‚Üê")
+action_deltas &lt;- list(c(1,0), # up
+                      c(0,1), # right
+                      c(-1,0), # down
+                      c(0,-1)) # left
+
+vis_environment &lt;- function(iterations=0, epsilon = 0.5, alpha = 0.1, gamma = 0.95, beta = 0){
+  
+  # Visualize an environment with rewards. 
+  # Q-values for all actions are displayed on the edges of each tile.
+  # The (greedy) policy for each state is also displayed.
+  # 
+  # Args:
+  #   iterations, epsilon, alpha, gamma, beta (optional): for the figure title.
+  #   reward_map (global variable): a HxW array containing the reward given at each state.
+  #   q_table (global variable): a HxWx4 array containing Q-values for each state-action pair.
+  #   H, W (global variables): environment dimensions.
+  
+  df &lt;- expand.grid(x=1:H,y=1:W)
+  foo &lt;- mapply(function(x,y) ifelse(reward_map[x,y] == 0,q_table[x,y,1],NA),df$x,df$y)
+  df$val1 &lt;- as.vector(round(foo, 2))
+  foo &lt;- mapply(function(x,y) ifelse(reward_map[x,y] == 0,q_table[x,y,2],NA),df$x,df$y)
+  df$val2 &lt;- as.vector(round(foo, 2))
+  foo &lt;- mapply(function(x,y) ifelse(reward_map[x,y] == 0,q_table[x,y,3],NA),df$x,df$y)
+  df$val3 &lt;- as.vector(round(foo, 2))
+  foo &lt;- mapply(function(x,y) ifelse(reward_map[x,y] == 0,q_table[x,y,4],NA),df$x,df$y)
+  df$val4 &lt;- as.vector(round(foo, 2))
+  foo &lt;- mapply(function(x,y) 
+    ifelse(reward_map[x,y] == 0,arrows[GreedyPolicy(x,y)],reward_map[x,y]),df$x,df$y)
+  df$val5 &lt;- as.vector(foo)
+  foo &lt;- mapply(function(x,y) ifelse(reward_map[x,y] == 0,max(q_table[x,y,]),
+                                     ifelse(reward_map[x,y]&lt;0,NA,reward_map[x,y])),df$x,df$y)
+  df$val6 &lt;- as.vector(foo)
+  
+  print(ggplot(df,aes(x = y,y = x)) +
+          scale_fill_gradient(low = "white", high = "green", na.value = "red", name = "") +
+          geom_tile(aes(fill=val6)) +
+          geom_text(aes(label = val1),size = 4,nudge_y = .35,na.rm = TRUE) +
+          geom_text(aes(label = val2),size = 4,nudge_x = .35,na.rm = TRUE) +
+          geom_text(aes(label = val3),size = 4,nudge_y = -.35,na.rm = TRUE) +
+          geom_text(aes(label = val4),size = 4,nudge_x = -.35,na.rm = TRUE) +
+          geom_text(aes(label = val5),size = 10) +
+          geom_tile(fill = 'transparent', colour = 'black') + 
+          ggtitle(paste("Q-table after ",iterations," iterations\n",
+                        "(epsilon = ",epsilon,", alpha = ",alpha,"gamma = ",gamma,", beta = ",beta,")")) +
+          theme(plot.title = element_text(hjust = 0.5)) +
+          scale_x_continuous(breaks = c(1:W),labels = c(1:W)) +
+          scale_y_continuous(breaks = c(1:H),labels = c(1:H)))
+  
+}
+
+GreedyPolicy &lt;- function(x, y){
+  
+  # Get a greedy action for state (x,y) from q_table.
+  #
+  # Args:
+  #   x, y: state coordinates.
+  #   q_table (global variable): a HxWx4 array containing Q-values for each state-action pair.
+  # 
+  # Returns:
+  #   An action, i.e. integer in {1,2,3,4}.
+  
+  # Your code here.
+  
+  foo &lt;- which(q_table[x,y,] == max(q_table[x,y,]))
+  return (ifelse(length(foo)&gt;1,sample(foo, size = 1),foo))
+  
+}
+
+EpsilonGreedyPolicy &lt;- function(x, y, epsilon){
+  
+  # Get an epsilon-greedy action for state (x,y) from q_table.
+  #
+  # Args:
+  #   x, y: state coordinates.
+  #   epsilon: probability of acting randomly.
+  # 
+  # Returns:
+  #   An action, i.e. integer in {1,2,3,4}.
+  
+  # Your code here.
+  
+  foo &lt;- sample(0:1,size = 1,prob = c(epsilon,1-epsilon))
+  return (ifelse(foo == 1,GreedyPolicy(x,y),sample(1:4,size = 1)))
+  
+}
+
+transition_model &lt;- function(x, y, action, beta){
+  
+  # Computes the new state after given action is taken. The agent will follow the action 
+  # with probability (1-beta) and slip to the right or left with probability beta/2 each.
+  # 
+  # Args:
+  #   x, y: state coordinates.
+  #   action: which action the agent takes (in {1,2,3,4}).
+  #   beta: probability of the agent slipping to the side when trying to move.
+  #   H, W (global variables): environment dimensions.
+  # 
+  # Returns:
+  #   The new state after the action has been taken.
+  
+  delta &lt;- sample(-1:1, size = 1, prob = c(0.5*beta,1-beta,0.5*beta))
+  final_action &lt;- ((action + delta + 3) %% 4) + 1
+  foo &lt;- c(x,y) + unlist(action_deltas[final_action])
+  foo &lt;- pmax(c(1,1),pmin(foo,c(H,W)))
+  
+  return (foo)
+}
+
+q_learning &lt;- function(start_state, epsilon = 0.5, alpha = 0.1, gamma = 0.95, 
+                       beta = 0, test = 0){
+  
+  # Just setting epsilon=0 instead of using the test argument is also OK.
+  # But in that case the agent acts greedily while still updating the q-table.
+  
+  cur_pos &lt;- start_state
+  episode_correction &lt;- 0
+  ite &lt;- 0
+  repeat{
+    # Follow policy, execute action, get reward.
+    action &lt;- EpsilonGreedyPolicy(cur_pos[1], cur_pos[2], epsilon*(1-test))
+    new_pos &lt;- transition_model(cur_pos[1], cur_pos[2], action, beta)
+    reward &lt;- reward_map[new_pos[1], new_pos[2]]
+    
+    # Q-table update.
+    old_q &lt;- q_table[cur_pos[1], cur_pos[2], action]
+    correction &lt;- ifelse(reward==0,-1,reward) + gamma*max(q_table[new_pos[1], new_pos[2], ]) - old_q
+    q_table[cur_pos[1], cur_pos[2], action] &lt;&lt;- old_q + alpha*correction*(1-test)
+    
+    cur_pos &lt;- new_pos
+    episode_correction &lt;- episode_correction + correction*(1-test)
+    
+    if(reward!=0)
+      # End episode.
+      return (c(reward-ite,episode_correction))
+    else
+      ite &lt;- ite+1
+  }
+  
+}
+
+SARSA &lt;- function(start_state, epsilon = 0.5, alpha = 0.1, gamma = 0.95, 
+                  beta = 0, test = 0){
+  
+  cur_pos &lt;- start_state
+  cur_action &lt;- EpsilonGreedyPolicy(cur_pos[1], cur_pos[2], epsilon*(1-test))
+  episode_correction &lt;- 0
+  ite &lt;- 0
+  repeat{
+    # Follow policy, execute action, get reward.
+    new_pos &lt;- transition_model(cur_pos[1], cur_pos[2], cur_action, beta)
+    reward &lt;- reward_map[new_pos[1], new_pos[2]]
+    new_action &lt;- EpsilonGreedyPolicy(new_pos[1], new_pos[2], epsilon*(1-test))
+    
+    # Q-table update.
+    old_q &lt;- q_table[cur_pos[1], cur_pos[2], cur_action]
+    correction &lt;- ifelse(reward==0,-1,reward) + gamma*q_table[new_pos[1], new_pos[2], new_action] - old_q
+    q_table[cur_pos[1], cur_pos[2], cur_action] &lt;&lt;- old_q + alpha*correction*(1-test)
+    
+    cur_pos &lt;- new_pos
+    cur_action &lt;- new_action
+    episode_correction &lt;- episode_correction + correction*(1-test)
+    
+    if(reward!=0)
+      # End episode.
+      return (c(reward-ite,episode_correction))
+    else
+      ite &lt;- ite+1
+  }
+  
+}
+
+MovingAverage &lt;- function(x, n){
+  
+  cx &lt;- c(0,cumsum(x))
+  rsum &lt;- (cx[(n+1):length(cx)] - cx[1:(length(cx) - n)]) / n
+  
+  return (rsum)
+}
+
+H &lt;- 3
+W &lt;- 6
+
+reward_map &lt;- matrix(0, nrow = H, ncol = W)
+reward_map[1,2:5] &lt;- -10
+reward_map[1,6] &lt;- 10
+# To avoid having to modify vis_environment, I take care of the reward -1 in the functions
+# q_learning and SARSA.
+
+q_table &lt;- array(0,dim = c(H,W,4))
+
+rewardqtr &lt;- NULL
+for(i in 1:5000){
+  foo &lt;- q_learning(start_state = c(1,1), epsilon = 0.5, gamma = 1, beta = 0, test = 0)
+  rewardqtr &lt;- c(rewardqtr,foo[1])
+}
+
+vis_environment(5000, epsilon = 0.5, gamma = 1, beta = 0)
+
+rewardqte &lt;- NULL
+for(i in 1:5000){
+  foo &lt;- q_learning(start_state = c(1,1), epsilon = 0.5, gamma = 1, beta = 0, test = 1)
+  rewardqte &lt;- c(rewardqte,foo[1])
+}
+
+q_table &lt;- array(0,dim = c(H,W,4))
+
+rewardstr &lt;- NULL
+for(i in 1:5000){
+  foo &lt;- SARSA(start_state = c(1,1), epsilon = 0.5, gamma = 1, beta = 0, test = 0)
+  rewardstr &lt;- c(rewardstr,foo[1])
+}
+
+vis_environment(5000, epsilon = 0.5, gamma = 1, beta = 0)
+
+rewardste &lt;- NULL
+for(i in 1:5000){
+  foo &lt;- SARSA(start_state = c(1,1), epsilon = 0.5, gamma = 1, beta = 0, test = 1)
+  rewardste &lt;- c(rewardste,foo[1])
+}
+
+plot(MovingAverage(rewardqtr,100),type = "l",ylim = c(-15,5))
+lines(MovingAverage(rewardqte,100),type = "l",lty=2)
+lines(MovingAverage(rewardstr,100),type = "l",col = "blue")
+lines(MovingAverage(rewardste,100),type = "l",col = "blue",lty=2)
+
+# During training Q-learning performs worse because it takes the shortest route to the 
+# goal state, which means the agent falling off the cliff now and then due to epsilon. 
+# Q-learning prefers the shortest path because it assumes in the updating rule that the 
+# subsequent moves will be greedy and, thus, the agent will never fall off the cliff. 
+# The reality is that the moves are not greedy due to epsilon. During testing Q-learning
+# performs better because epsilon is zero and thus the agent never falls off the cliff.
+
+##############################################################################
+# Question 3: GPs.
+
+SEKernel &lt;- function(x1,x2){
+  n1 &lt;- length(x1)
+  n2 &lt;- length(x2)
+  K &lt;- matrix(NA,n1,n2)
+  for (i in 1:n2){
+    K[,i] &lt;- (sigmaF^2)*exp(-0.5*( (x1-x2[i])/l)^2 )
+  }
+  return(K)
+}
+
+posteriorGP &lt;- function(X,y,k,sigmaNoise,xStar){
+  n &lt;- length(y)
+  L &lt;- t(chol(k(X,X)+((sigmaNoise^2)*diag(n))))
+  a &lt;- solve(t(L),solve(L,y))
+  kStar &lt;- k(X,xStar)
+  mu &lt;- t(kStar)%*%a
+  v &lt;- solve(L,kStar)
+  var &lt;- k(xStar,xStar)-(t(v)%*%v)
+  logmar &lt;- -0.5*(t(y)%*%a)-sum(diag(L))-(n/2)*log(2*pi)
+  return(list("mu"=mu,"var"=var,"logmar"=logmar))
+}
+
+sigmaF &lt;- 1
+l &lt;- 0.3
+xData &lt;- c(-1,-0.6,-0.2,0.4,0.8)
+yData &lt;- c(0.768,-0.044,-0.94,0.719,-0.664)
+xGrid &lt;- seq(-1,1,0.01)
+res&lt;-posteriorGP(X=xData,y=yData,k=SEKernel,sigmaNoise=0,xStar=xGrid)
+plot(xData,yData,xlim=c(-1,1),ylim=c(-0.5,0.5))
+xGrid[101]
+lines(xGrid, res$var[101,], col = "green")
+abline(h=0)
+abline(v=-1)
+abline(v=-0.6)
+abline(v=-0.2)
+abline(v=0.4)
+abline(v=0.8)
+abline(v=0)
+
+foo &lt;- SEKernel(xGrid,0)
+plot(xGrid,foo)
+
+# The posterior covariance is zero at the training points because the functions must
+# go through them, i.e. there is no uncertainty due to this being a noisy-free problem.
+# The posterior covariance is not monotone decreasing with the distance because it is
+# constrained by the fact of being zero in the training points.
+
+##############################################################################
+# Hyperparameter search for sigmaNoise.
+
+tempData &lt;- read.csv('https://github.com/STIMALiU/AdvMLCourse/raw/master/GaussianProcess/Code/TempTullinge.csv', header=TRUE, sep=';')
+temp &lt;- tempData$temp
+plot(temp, type="l")
+time = 1:length(temp)
+day = rep(1:365,6)
+
+# Extract every 5:th observation
+subset &lt;- seq(1, length(temp), by = 5)
+temp &lt;- temp[subset]
+time = time[subset]
+plot(time,temp, type="l")
+
+sigmaF &lt;- 20
+l &lt;- 0.2
+polyFit &lt;- lm(scale(temp) ~  scale(time) + I(scale(time)^2))
+sigmaNoiseFit = sd(polyFit$residuals)
+res&lt;-posteriorGP(X=scale(time),y=scale(temp),k=SEKernel,sigmaNoise=sigmaNoiseFit,xStar=scale(time))
+lines(time, res$mu*sd(temp)+mean(temp), col="green", lwd = 2)
+lines(time, res$mu*sd(temp)+mean(temp) - 1.96*sd(temp)*sqrt(diag(res$var)), col = "red")
+lines(time, res$mu*sd(temp)+mean(temp) + 1.96*sd(temp)*sqrt(diag(res$var)), col = "red")
+
+LM &lt;- function(X,y,k,par){
+  n &lt;- length(y)
+  L &lt;- t(chol(k(X,X)+((par^2)*diag(n))))
+  a &lt;- solve(t(L),solve(L,y))
+  logmar &lt;- -0.5*(t(y)%*%a)-sum(diag(L))-(n/2)*log(2*pi)
+  return(logmar)
+}
+
+# Grid search.
+
+besti&lt;- 0.1
+bestLM&lt;-LM(X=scale(time),y=scale(temp),k=SEKernel,par=besti)
+bestLM
+besti
+for(i in seq(0.2,10,0.1)){
+    aux&lt;-LM(X=scale(time),y=scale(temp),k=SEKernel,par=i)
+    if(bestLM&lt;aux){
+      bestLM&lt;-aux
+      besti&lt;-i
+    }
+  }
+bestLM
+besti
+
+res&lt;-posteriorGP(X=scale(time),y=scale(temp),k=SEKernel,sigmaNoise=besti,xStar=scale(time))
+lines(time, res$mu*sd(temp)+mean(temp), col="green", lwd = 2)
+lines(time, res$mu*sd(temp)+mean(temp) - 1.96*sd(temp)*sqrt(diag(res$var)), col = "blue")
+lines(time, res$mu*sd(temp)+mean(temp) + 1.96*sd(temp)*sqrt(diag(res$var)), col = "blue")
+
+# optim.
+
+foo&lt;-optim(par = 0.1, fn = LM, X=scale(time),y=scale(temp),k=SEKernel, method="L-BFGS-B",
+           lower = c(.Machine$double.eps),control=list(fnscale=-1))
+foo$value
+foo$par
+
+res&lt;-posteriorGP(X=scale(time),y=scale(temp),k=SEKernel,sigmaNoise=besti,xStar=scale(time))
+lines(time, res$mu*sd(temp)+mean(temp), col="green", lwd = 2)
+lines(time, res$mu*sd(temp)+mean(temp) - 1.96*sd(temp)*sqrt(diag(res$var)), col = "blue")
+lines(time, res$mu*sd(temp)+mean(temp) + 1.96*sd(temp)*sqrt(diag(res$var)), col = "blue")
+</pre></body></html>Ztext/plainUUTF-8_Ghttps://raw.githubusercontent.com/STIMALiU/AdvMLCourse/master/Oct2020.RP    ( : P n } î;A;L;R;ú                           ;ù
